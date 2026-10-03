@@ -1,0 +1,68 @@
+/* lemo-mod 网站两页共用：颜色、字体、顶栏、按钮、中英切换。
+   Lemo 实验室：方格纸、柠檬黄 #F2CF1D、海军蓝 #2F4F96、像素小画；正文用干净的无衬线，Logo 用像素字 */
+:root {
+  --bg: #F3F4F0; --surface: #FFFFFF; --sunken: #E9EAE4; --fg: #16181B; --muted: #5C626A; --faint: #8B9098; --line: #DDDFD8; --line-2: #C9CCC3;
+  --link: #2C4E9C; --brand: #E8C11A; --sel: #16181B; --sel-fg: #F3F4F0; --icon-bg: #15171A;
+  --lemon: #F2CF1D; --on-lemon: #16181B; --navy: #2F4F96; --navy-ink: #2F4F96; --on-navy: #FFFFFF;
+  --grid: rgba(47, 79, 150, .075); --paper: #FFFBEA; --gh: #16181B; --gh-fg: #FFFFFF; --bar-bg: rgba(243, 244, 240, .88);
+  --display: "Martian Mono", "JetBrains Mono", ui-monospace, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", monospace;
+  --sans: "IBM Plex Sans", -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, "PingFang SC", monospace;
+  --rail-w: 232px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #101113; --surface: #17191C; --sunken: #1E2125; --fg: #E8EAEC; --muted: #A1A7AF; --faint: #737982; --line: #2A2D32; --line-2: #3A3E44; --link: #A3B9F2; --brand: #F2CF1D; --sel: #E8EAEC; --sel-fg: #101113; --icon-bg: #0B0C0E;
+    --navy-ink: #A3B9F2; --grid: rgba(163, 185, 242, .055); --paper: #1A1C20; --gh: #E8EAEC; --gh-fg: #101113; --bar-bg: rgba(16, 17, 19, .86); color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #101113; --surface: #17191C; --sunken: #1E2125; --fg: #E8EAEC; --muted: #A1A7AF; --faint: #737982; --line: #2A2D32; --line-2: #3A3E44; --link: #A3B9F2; --brand: #F2CF1D; --sel: #E8EAEC; --sel-fg: #101113; --icon-bg: #0B0C0E;
+  --navy-ink: #A3B9F2; --grid: rgba(163, 185, 242, .055); --paper: #1A1C20; --gh: #E8EAEC; --gh-fg: #101113; --bar-bg: rgba(16, 17, 19, .86); color-scheme: dark; }
+
+html { background: var(--bg); -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+h1, h2, h3, p { margin: 0; }
+button { font: inherit; }
+a { color: var(--link); }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.vh { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* 中英：两种文字都写在页面里，按 <html lang> 显示一种（默认中文） */
+:root:not([lang="en"]) [data-l="en"], :root[lang="en"] [data-l="zh"] { display: none !important; }
+
+/* ---------- 顶栏 ---------- */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bar-bg); -webkit-backdrop-filter: saturate(1.4) blur(10px); backdrop-filter: saturate(1.4) blur(10px); border-bottom: 1px solid var(--line); }
+.topbar-in { max-width: var(--page-max, 1180px); margin: 0 auto; padding-inline: 24px; height: 56px; display: flex; align-items: center; gap: 10px; box-sizing: border-box; }
+.brand-link { display: inline-flex; align-items: center; gap: 9px; color: var(--fg); text-decoration: none; margin-right: 14px; flex-shrink: 0; }
+.brand-flask { width: 30px; height: 19px; display: block; }
+.brand-flask svg { width: 100%; height: 100%; display: block; }
+.wm { display: block; color: var(--fg); }
+.wm svg { display: block; height: 18px; width: auto; }  /* 9 格高，一格 2px */
+.tb-nav { display: flex; gap: 2px; }
+.tb-nav a { color: var(--muted); text-decoration: none; font-size: 14px; padding: 6px 10px; border-radius: 7px; white-space: nowrap; }
+.tb-nav a:hover { color: var(--fg); background: var(--sunken); }
+.tb-nav a[aria-current] { color: var(--fg); font-weight: 500; box-shadow: inset 0 -3px 0 var(--lemon); border-radius: 0; }
+.tb-sp { flex: 1; }
+.tb-seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--sunken); border-radius: 9px; flex-shrink: 0; }
+.tb-seg button { border: 0; background: transparent; color: var(--muted); height: 26px; min-width: 30px; padding: 0 8px; border-radius: 6px; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; }
+.tb-seg button:hover { color: var(--fg); }
+.tb-seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px var(--line); }
+.tb-seg svg { width: 13px; height: 13px; fill: currentColor; display: block; }
+.btn-gh { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 13px; border-radius: 9px; background: var(--gh); color: var(--gh-fg); text-decoration: none; font-weight: 600; font-size: 14px; flex-shrink: 0; white-space: nowrap; }
+.btn-gh svg { width: 17px; height: 17px; fill: currentColor; display: block; }
+.btn-gh .gh-star { font-weight: 500; font-size: 12.5px; padding-left: 9px; margin-left: 1px; border-left: 1px solid color-mix(in srgb, var(--gh-fg) 30%, transparent); }
+.btn-gh:hover { filter: brightness(1.15); }
+
+@media (max-width: 760px) {
+  .tb-nav { display: none; }
+  .topbar-in { padding-inline: 16px; gap: 8px; }
+  .brand-link { margin-right: 0; }
+}
+@media (max-width: 520px) {
+  .btn-gh .gh-star { display: none; }
+}
+@media (max-width: 420px) {
+  .btn-gh { padding: 0 9px; }
+  .btn-gh .gh-t { display: none; }
+  .tb-seg button { min-width: 26px; padding: 0 6px; }
+}
