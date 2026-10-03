@@ -31,7 +31,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 :root:not([lang="en"]) [data-l="en"], :root[lang="en"] [data-l="zh"] { display: none !important; }
 
 /* ---------- 顶栏 ---------- */
-.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bar-bg); -webkit-backdrop-filter: saturate(1.4) blur(10px); backdrop-filter: saturate(1.4) blur(10px); border-bottom: 1px solid var(--line); }
+/* 贴最顶，安全区算进顶栏自己的上边距：App 内置浏览器（如 X）安全区报得偏大，用 top 会让顶栏悬在半中间、上面透出正文 */
+.topbar { position: sticky; top: 0; padding-top: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bar-bg); -webkit-backdrop-filter: saturate(1.4) blur(10px); backdrop-filter: saturate(1.4) blur(10px); border-bottom: 1px solid var(--line); }
 .topbar-in { max-width: var(--page-max, 1180px); margin: 0 auto; padding-inline: 24px; height: 56px; display: flex; align-items: center; gap: 10px; box-sizing: border-box; }
 .brand-link { display: inline-flex; align-items: center; gap: 9px; color: var(--fg); text-decoration: none; margin-right: 14px; flex-shrink: 0; }
 .brand-flask { width: 30px; height: 19px; display: block; }
