@@ -32,22 +32,29 @@ const LemoDeskRef = { plugin: 'lemo-core', key: 'desk' } as const
 const LemoTabRef = { plugin: 'lemo-core', key: 'tab' } as const
 const LemoModsRef = { plugin: 'lemo-core', key: 'mods' } as const
 const LemoSeqRef = { plugin: 'lemo-core', key: 'seq' } as const
+const LemoTurnNoRef = { plugin: 'lemo-core', key: 'turnNo' } as const
 
 /**
  * 画东西时要的风格和语言。读 lemo-core 的状态会订阅，lemo-core 一改自动重画；还没写过时用 $.lemo 兜底。
- * 面板（Pane）的 hook 要把 e.props 传进来：面板停在哪（placement）决定正文用什么颜色（见 shared/lemo.tsx 的 inkOf）
+ * 面板（Pane）的 hook 要把 e.props 传进来：面板停在哪（placement）决定正文用什么颜色（见 shared/lemo.tsx 的 inkOf），
+ * 面板宽度（bodyColumns）决定卡片说明在哪断行（见 shared/lemo.tsx 的 card）
  */
-async function look($: LemoEngine, pane?: { placement: 'dock' | 'inline' }): Promise<LemoLook> {
+async function look($: LemoEngine, pane?: { placement: 'dock' | 'inline'; bodyColumns?: number }): Promise<LemoLook> {
   const st = (await $.state.get(LemoStyleRef)).value ?? (await $.lemo.style({}))
   const lang = (await $.state.get(LemoLangRef)).value ?? (await $.lemo.lang({}))
   const theme = (await $.state.get(LemoThemeRef)).value ?? null
   const desk = (await $.state.get(LemoDeskRef)).value ?? null
-  return { st, c: st.colors, lang, theme, desk, inline: pane?.placement === 'inline' }
+  return { st, c: st.colors, lang, theme, desk, inline: pane?.placement === 'inline', ...(pane?.bodyColumns === undefined ? {} : { bodyColumns: pane.bodyColumns }) }
 }
 
 /** 用户本人发了几条消息（T01、T02…） */
 async function seqOf($: LemoEngine): Promise<number> {
   return (await $.state.get(LemoSeqRef)).value ?? 0
+}
+
+/** 这一轮回的是第几条消息：提醒、助手交回、斜杠命令开头的一轮是 0（不写号）。lemo-core 还没写过时当作 seq */
+async function turnNoOf($: LemoEngine): Promise<number> {
+  return (await $.state.get(LemoTurnNoRef)).value ?? (await seqOf($))
 }
 
 /** 统一面板现在显示哪一页：存的那页在这个界面上没有，就显示第一页 */
@@ -104,8 +111,15 @@ let said: { n: number; text: string } = { n: 0, text: '' }
 let tailLoaded = false
 // 这一轮是谁引起的：用户本人、lemo-watch 的提醒，还是后台任务通知、助手交回的报告这类。
 // 不是用户本人引起的一轮，日志里编号那一栏写「提醒」「后台」，不冒用用户上一条的编号
-type TurnBy = 'person' | 'remind' | 'bg'
+type TurnBy = 'person' | 'remind' | 'bg' | 'cmd'
 let turnBy: TurnBy = 'person'
+// 下一轮是谁引起的：用户输入、追加进对话记录时先记在这里，turn.start 时才定给那一轮。
+// 不在追加时直接定：排队的输入、命令可能在上一轮还没结束时就进来，会改掉正在跑那一轮的类别。
+// skill 那一轮只有用户输入（命令不进对话记录），提醒之后跑的 skill 靠它不再被记成「提醒」
+let nextBy: TurnBy | null = null
+// 这一轮开头时用户最近输入的原文（「命令」那一行写它）：turn.start 时抄下，之后排队进来的话改不了它。
+// null：mod 载入以后还没见过 turn.start（一轮跑到一半热重载了），照最近输入的算
+let turnText: string | null = null
 
 /** 英文的「1 steps」「1 tools」改成单数 */
 const one = (t: string) => t.replace(/\b1 (step|tool)s\b/g, '1 $1')
@@ -177,8 +191,9 @@ async function appendLog($: EngineInterface, line: string, head: string) {
 
 // 一轮一行：时间 · 项目 · T03 · 标签 · 用时 · 几步几次工具 · 用户那句话的开头。
 // 不是用户本人引起的一轮：编号那一栏写「提醒」「后台」，不带标签和用户的话。
+// 斜杠命令（skill）开头的一轮：编号那一栏写「命令」，后面是用户输入的命令。
 // 这一行在一轮刚结束时就拼好（编号、标签是这一轮的），再排队写进文件
-async function logTurn($: EngineInterface, ms: number, by: TurnBy) {
+async function logTurn($: EngineInterface, ms: number, by: TurnBy, typed: string) {
   if (!(await liveFlag($, 'log'))) return
   const lk = await look($)
   const S = STR[lk.lang]
@@ -186,13 +201,13 @@ async function logTurn($: EngineInterface, ms: number, by: TurnBy) {
   const stats = last === null ? '' : ` · ${one(fill(S.turnStats, { steps: last.steps, tools: last.tools }))}`
   const where = project === '' ? '' : ` · ${project}`
   const now = await $.clock.now()
-  let who = S.by[by === 'remind' ? 'remind' : 'bg']
+  let who = S.by[by === 'person' ? 'bg' : by]
   let kind = ''
-  let tailText = ''
+  let tailText = by === 'cmd' && typed !== '' ? ` · ${clip(typed, 50)}` : ''
   if (by === 'person') {
     const n = await seqOf($)
     const tag = ((await $.state.get(TAGS)).value ?? {})[String(n)]
-    const text = said.n === n && said.text !== '' ? said.text : lastPrompt
+    const text = said.n === n && said.text !== '' ? said.text : typed
     who = exp(n)
     kind = tag === undefined ? '' : ` · ${S.kinds[tag] ?? tag}`
     tailText = text === '' ? '' : ` · ${clip(text, 50)}`
@@ -344,6 +359,7 @@ export const register: Register = on => {
     if (!NOT_PERSON.has(e.origin.kind)) {
       pendingText = e.text.trim()
       lastPrompt = pendingText
+      nextBy = 'person'
     }
     return next(e)
   })
@@ -360,8 +376,8 @@ export const register: Register = on => {
     // 先记下这一轮是谁引起的（转交之前就记，转交出错也不影响）：
     // 不是用户本人发的，lemo-watch 的提醒以 ⏰ 开头，别的算后台；日志里都不给它编号
     const isPerson = main && !NOT_PERSON.has(o.kind) && e.message.isMeta !== true
-    if (main && NOT_PERSON.has(o.kind)) turnBy = first?.startsWith(REMIND_MARK) === true ? 'remind' : 'bg'
-    else if (isPerson) turnBy = 'person'
+    if (main && NOT_PERSON.has(o.kind)) nextBy = first?.startsWith(REMIND_MARK) === true ? 'remind' : 'bg'
+    else if (isPerson) nextBy = 'person'
     const r = await next(e)
     if (!isPerson) return r
     const n = await seqOf($)
@@ -374,14 +390,26 @@ export const register: Register = on => {
     return r
   })
 
+  // 一轮开始：定下这一轮是谁引起的（只有主对话有 turn.start）。接着上一轮说的（前面什么也没进来）照上一轮的算
+  on('turn.start', async ($, e, next) => {
+    if (nextBy !== null) {
+      turnBy = nextBy
+      turnText = lastPrompt
+      nextBy = null
+    }
+    return next(e)
+  })
+
   // 一轮结束：lemo-core 在里层写 lastTurn（几步几次工具），所以先 next 再读。只记主对话、没被中断的
   on('turn.complete', async ($, e, next) => {
     const r = await next(e)
     if (e.agentId !== undefined || e.isAborted) return r
     const ms = e.durationMs
-    const by = turnBy
+    // 用户本人这边开头、lemo-core 却没给这一轮编号的：是斜杠命令（skill）开头的
+    const by: TurnBy = turnBy === 'person' && (await turnNoOf($)) === 0 ? 'cmd' : turnBy
+    const typed = turnText ?? lastPrompt
     $.clock.after(0, () => {
-      void logTurn($, ms, by)
+      void logTurn($, ms, by, typed)
     })
     return r
   })

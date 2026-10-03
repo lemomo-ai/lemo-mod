@@ -50,7 +50,7 @@ function watchActs(on: On): string[] {
   return did
 }
 
-test('加载词：换成默认的词，后面带消息编号', { plugins: [testCore] }, async ($, on) => {
+test('加载词：换成默认的词（还没有消息时不写号）', { plugins: [testCore] }, async ($, on) => {
   mock.clock(on)
   // 用户自己没设转圈文字：默认换
   scanned(on, false)
@@ -61,7 +61,7 @@ test('加载词：换成默认的词，后面带消息编号', { plugins: [testC
   })
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await mountChecked($, { plugin: 'lemo-spinner', surface, component: 'Spinner', props: { word: 'Sauteing', message: null, suffix: '…', mode: 'thinking' } } as never)
-    expect(shown).toBe('思考中… · T00')
+    expect(shown).toBe('思考中…')
     await ui.unmount()
   }
 })
@@ -93,6 +93,21 @@ test('编号前进：第几条消息就用第几个词（超过词数从头轮�
     // 默认 6 个词：第 7 条轮回第 1 个
     seq = 7
     expect(await shownOn($, surface, seen)).toBe('处理中… · T07')
+  }
+})
+
+test('提醒、助手交回、斜杠命令开头的一轮（lemo-core 的 turnNo 是 0）：不写号，不借用上一条的号', { plugins: [testCore] }, async ($, on) => {
+  mock.clock(on)
+  scanned(on, false)
+  on('state.get', { plugin: 'lemo-core', key: 'seq' }, async () => ({ value: { value: 3, version: 1 } }))
+  on('state.get', { plugin: 'lemo-core', key: 'turnNo' }, async () => ({ value: { value: 0, version: 1 } }))
+  const seen = { text: '' }
+  on('ui.render', { component: 'Spinner' }, async ($$, e) => {
+    seen.text = `${e.props.word}${e.props.suffix}`
+    return { type: 'engine', ref: 0 } as const
+  })
+  for (const surface of ['terminal', 'desktop'] as const) {
+    expect(await shownOn($, surface, seen)).toBe('推敲中…')
   }
 })
 
@@ -170,10 +185,10 @@ test('照你自己的设置：你设了转圈文字（spinnerVerbs）就不换�
   // 在安全页打开：换，记进 $.store
   expect(await toggle($, { mod: 'lemo-spinner', id: 'words', on: true })).toBe(true)
   expect(kv.get('words')).toBe(true)
-  expect(await shownOn($, 'desktop', seen)).toBe('思考中… · T00')
+  expect(await shownOn($, 'desktop', seen)).toBe('思考中…')
   // 「全部关闭」不碰外观
   await allOff($)
-  expect(await shownOn($, 'terminal', seen)).toBe('思考中… · T00')
+  expect(await shownOn($, 'terminal', seen)).toBe('思考中…')
   // 没设转圈文字的人关掉它：照原样
   scan = { spinnerVerbs: false }
   await toggle($, { mod: 'lemo-spinner', id: 'words', on: false })
@@ -209,7 +224,7 @@ test('安全：刚装上（存档全空）只换加载词，别的什么都不�
     return { type: 'engine', ref: 0 } as const
   })
   await $.session.start({ cwd: '/tmp', surface: 'terminal', isInteractive: true })
-  expect(await shownOn($, 'terminal', seen)).toBe('思考中… · T00')
+  expect(await shownOn($, 'terminal', seen)).toBe('思考中…')
   await $.turn.complete({ turnId: 't', answer: '', durationMs: 1000, isAborted: false } as never)
   expect(did).toEqual([])
   // 关掉以后照原样

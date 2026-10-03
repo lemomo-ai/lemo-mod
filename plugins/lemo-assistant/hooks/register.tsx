@@ -36,22 +36,29 @@ const LemoDeskRef = { plugin: 'lemo-core', key: 'desk' } as const
 const LemoTabRef = { plugin: 'lemo-core', key: 'tab' } as const
 const LemoModsRef = { plugin: 'lemo-core', key: 'mods' } as const
 const LemoSeqRef = { plugin: 'lemo-core', key: 'seq' } as const
+const LemoTurnNoRef = { plugin: 'lemo-core', key: 'turnNo' } as const
 
 /**
  * 画东西时要的风格和语言。读 lemo-core 的状态会订阅，lemo-core 一改自动重画；还没写过时用 $.lemo 兜底。
- * 面板（Pane）的 hook 要把 e.props 传进来：面板停在哪（placement）决定正文用什么颜色（见 shared/lemo.tsx 的 inkOf）
+ * 面板（Pane）的 hook 要把 e.props 传进来：面板停在哪（placement）决定正文用什么颜色（见 shared/lemo.tsx 的 inkOf），
+ * 面板宽度（bodyColumns）决定卡片说明在哪断行（见 shared/lemo.tsx 的 card）
  */
-async function look($: LemoEngine, pane?: { placement: 'dock' | 'inline' }): Promise<LemoLook> {
+async function look($: LemoEngine, pane?: { placement: 'dock' | 'inline'; bodyColumns?: number }): Promise<LemoLook> {
   const st = (await $.state.get(LemoStyleRef)).value ?? (await $.lemo.style({}))
   const lang = (await $.state.get(LemoLangRef)).value ?? (await $.lemo.lang({}))
   const theme = (await $.state.get(LemoThemeRef)).value ?? null
   const desk = (await $.state.get(LemoDeskRef)).value ?? null
-  return { st, c: st.colors, lang, theme, desk, inline: pane?.placement === 'inline' }
+  return { st, c: st.colors, lang, theme, desk, inline: pane?.placement === 'inline', ...(pane?.bodyColumns === undefined ? {} : { bodyColumns: pane.bodyColumns }) }
 }
 
 /** 用户本人发了几条消息（T01、T02…） */
 async function seqOf($: LemoEngine): Promise<number> {
   return (await $.state.get(LemoSeqRef)).value ?? 0
+}
+
+/** 这一轮回的是第几条消息：提醒、助手交回、斜杠命令开头的一轮是 0（不写号）。lemo-core 还没写过时当作 seq */
+async function turnNoOf($: LemoEngine): Promise<number> {
+  return (await $.state.get(LemoTurnNoRef)).value ?? (await seqOf($))
 }
 
 /** 统一面板现在显示哪一页：存的那页在这个界面上没有，就显示第一页 */
@@ -110,12 +117,20 @@ async function projectFiles($: EngineInterface): Promise<string[]> {
 const AUTO = 'auto'
 const NO_START = 'no-start'
 
-/** 出错时卡片上的那句话，按当前语言拼（旧版本存的是拼好的 text，照样显示） */
-function errorText(S: (typeof STR)['zh'], h: LemoAssistantHelper): string {
+/**
+ * 出错时卡片上的那句话，按当前语言拼（旧版本存的是拼好的 text，照样显示）。
+ * 被自动模式的审核拦下时，卡片上后面接一句怎么办；没允许 Claude 派时先请用户允许。
+ * isOffered 为 null：横条上用，只说为什么（横条放不下长句，「下面的按钮」在横条上也找不到）
+ */
+function errorText(S: (typeof STR)['zh'], h: LemoAssistantHelper, isOffered: boolean | null): string {
   const err = h.error
   if (err === undefined) return h.text
   if (err.kind === 'empty') return S.empty
-  const why = err.why === AUTO ? S.auto : err.why === NO_START ? S.noStart : err.why
+  if (err.why === AUTO) {
+    const why = fill(S.fail, { why: S.auto })
+    return isOffered === null ? why : `${why}${S.tipSep}${isOffered ? S.autoTip : S.autoTipOff}`
+  }
+  const why = err.why === NO_START ? S.noStart : err.why
   return fill(S.fail, { why })
 }
 
@@ -161,7 +176,7 @@ async function dispatchHelper($: EngineInterface) {
   const short = /classifier/i.test(why) ? AUTO : why === NO_START ? NO_START : clip(why, 80)
   const failed: LemoAssistantHelper = { status: 'error', text: '', agentId: null, error: { kind: 'fail', why: short, filled: false } }
   await update($, helper, () => failed)
-  await $.lemo.notice({ text: errorText(S, failed), tone: 'red' })
+  await $.lemo.notice({ text: errorText(S, failed, null), tone: 'red' })
 }
 
 // 助手交回周报：存进卡片，响一声，横条提示
@@ -364,7 +379,7 @@ export const register: Register = on => {
           <Box flexDirection="column" gap={1}>
             {/* 报告是读了仓库文件写的，不可信：画成纯文字，链接不能点（plainLines） */}
             {hp.status === 'done' ? plainLines(el, lk, e.surface, hp.text.slice(0, 4000), 'assistant-report') : null}
-            {hp.status === 'error' ? <Text color={lk.c.red}>{errorText(S, hp)}</Text> : null}
+            {hp.status === 'error' ? <Text color={lk.c.red}>{errorText(S, hp, isOffered)}</Text> : null}
             <Box flexDirection="row">
               <Button key="assistant-offer" label={isOffered ? S.offerOn : S.offerOff} {...sec(e.surface)} onPress={() => toggleOffer($)} />
             </Box>

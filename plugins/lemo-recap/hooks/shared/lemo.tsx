@@ -31,7 +31,8 @@ export const HUB = 'lemo-mod'
  * 这时面板没有主题画的底，字直接落在终端自己的底色上；停靠在对话旁边（dock）时底色才是主题画的。
  * 只有面板的 hook 会是 true（look($, e.props)），别处都是 false
  */
-export type Look = { st: Style; c: Colors; lang: Lang; theme: Theme; desk: Theme; inline: boolean }
+/** bodyColumns：面板里画的时候是面板正文的宽度（卡片说明按它先断好行），别处没有 */
+export type Look = { st: Style; c: Colors; lang: Lang; theme: Theme; desk: Theme; inline: boolean; bodyColumns?: number }
 
 // ---------- 文字 ----------
 
@@ -260,9 +261,12 @@ export type CardSpec = {
   cols?: number
 }
 
-/** 终端面板里一张卡片正文能占几列：面板正文宽减去左右各 2 列留白、竖条和它后面的空格，再留 1 列余量 */
+/**
+ * 终端面板里一张卡片正文能占几列：面板正文宽减去左右各 2 列留白、竖条和它后面的空格，再留 1 列余量。
+ * 不设比实际宽的下限：断出来的行比面板宽，每行末尾会被截掉（wrapCjk 自己最少按 4 列断）
+ */
 export function cardCols(bodyColumns: number): number {
-  return Math.max(16, bodyColumns - 7)
+  return Math.max(4, bodyColumns - 7)
 }
 
 /** 终端里先断好行的一段灰字（wrapCjk），每行单独画、不再让 Ink 断 */
@@ -339,6 +343,8 @@ export function card(el: Els, lk: Look, surface: string, spec: CardSpec) {
   const { Box, Text } = el
   const isTerm = surface === 'terminal'
   const head = cardTitle(el, lk, surface, spec.title)
+  // 说明按面板宽度先断好行（标点不落到行首）：卡片自己给了 cols 就用它，没给就按面板宽度算
+  const cols = spec.cols ?? (lk.bodyColumns === undefined ? undefined : cardCols(lk.bodyColumns))
   if (isTerm) {
     return (
       <Box key={spec.id} flexDirection="row" gap={1}>
@@ -348,7 +354,7 @@ export function card(el: Els, lk: Look, surface: string, spec: CardSpec) {
             <Box flexShrink={1}>{head}</Box>
             {spec.buttons === undefined ? null : <Box flexDirection="row" gap={1} flexShrink={0}>{spec.buttons}</Box>}
           </Box>
-          {spec.desc === undefined ? null : spec.cols === undefined ? <Text dimColor>{cjkKeep(spec.desc)}</Text> : para(el, spec.desc, spec.cols)}
+          {spec.desc === undefined ? null : cols === undefined ? <Text dimColor>{cjkKeep(spec.desc)}</Text> : para(el, spec.desc, cols)}
           {spec.extra === undefined || spec.extra === null ? null : <Box marginTop={1} flexDirection="column">{spec.extra}</Box>}
         </Box>
       </Box>

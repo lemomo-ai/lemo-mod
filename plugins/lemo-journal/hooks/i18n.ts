@@ -9,7 +9,7 @@ const zh = {
   // 日志里一行的「几步几次工具」
   turnStats: '{steps} 步 · {tools} 次工具',
   // 不是用户本人引起的一轮，日志里编号那一栏写这个：lemo-watch 的提醒、后台任务通知和助手交回的报告
-  by: { remind: '提醒', bg: '后台' },
+  by: { remind: '提醒', bg: '后台', cmd: '命令' },
   on: '已开 · 点击关闭',
   off: '打开',
   log: {
@@ -48,7 +48,7 @@ export type JournalStrings = typeof zh
 const en: JournalStrings = {
   kinds: { question: 'question', code: 'code', debug: 'debug', chat: 'chat' },
   turnStats: '{steps} steps · {tools} tools',
-  by: { remind: 'reminder', bg: 'background' },
+  by: { remind: 'reminder', bg: 'background', cmd: 'command' },
   on: 'On · click to turn off',
   off: 'Turn on',
   log: {

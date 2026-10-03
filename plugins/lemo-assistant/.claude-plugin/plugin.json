@@ -1,7 +1,7 @@
 {
   "name": "lemo-assistant",
   "displayName": "lemo-assistant",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "助手：只读子 agent（Haiku），写三行周报 · 点按钮才派；「Claude 可派助手」默认关闭，在「安全」页开启 / Assistant: a read-only subagent (Haiku) that writes a three-line report · sent only when you press its button; \"Claude can send the assistant\" is off by default, switch on in Safety",
   "author": { "name": "lemomo" },
   "license": "MIT",

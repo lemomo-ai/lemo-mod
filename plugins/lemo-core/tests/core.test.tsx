@@ -28,7 +28,7 @@ const probe: Plugin = {
       else if (op === 'read-badges') r = (await $.state.get({ plugin: 'lemo-core', key: 'badges' })).value
       else if (op === 'read-notice') r = (await $.state.get({ plugin: 'lemo-core', key: 'notice' })).value
       else if (op === 'read-desk') r = (await $.state.get({ plugin: 'lemo-core', key: 'desk' })).value ?? null
-      else if (op === 'read-numbers') r = { seq: (await $.state.get({ plugin: 'lemo-core', key: 'seq' })).value, numbers: (await $.state.get({ plugin: 'lemo-core', key: 'numbers' })).value, replies: (await $.state.get({ plugin: 'lemo-core', key: 'replies' })).value }
+      else if (op === 'read-numbers') r = { seq: (await $.state.get({ plugin: 'lemo-core', key: 'seq' })).value, turnNo: (await $.state.get({ plugin: 'lemo-core', key: 'turnNo' })).value, numbers: (await $.state.get({ plugin: 'lemo-core', key: 'numbers' })).value, replies: (await $.state.get({ plugin: 'lemo-core', key: 'replies' })).value }
       else return { text: 'no such method' }
       return { text: JSON.stringify(r ?? null) }
     })
@@ -368,6 +368,88 @@ test('编号：斜杠命令不记原文，不会借走下一条消息的号', { 
   expect(r.numbers.texts['/Users/me/a.css 看一下']).toBe(2)
 })
 
+test('编号：提醒、助手交回、斜杠命令（skill）开头的一轮，回复不借用上一条的号（记 0）；用户本人发的照常带号', { plugins: [probe] }, async ($, on) => {
+  mock.clock(on)
+  mock.store(on, { lang: 'zh' })
+  on('prompt.submit', async ($$, e) => ({ text: e.text }))
+  on('turn.start', async ($$, e) => ({ turnId: e.turnId }))
+  const numbers = async () => JSON.parse(((await $.command.run({ command: 'probe', args: 'read-numbers {}' } as never)) as { text: string }).text)
+  const prompt = async (text: string, uuid: string, kind: string) => {
+    if (kind === 'composer') await $.prompt.submit({ text, origin: { kind } } as never)
+    await $.session.append({ door: 'prompt', origin: { kind }, uuid, message: { type: 'user', role: 'user', content: [{ type: 'text', text }] } } as never).catch(() => undefined)
+    await $.turn.start({ text, turnId: `t-${uuid}` })
+  }
+  const reply = async (text: string, uuid: string) => {
+    await $.session.append({ door: 'response', origin: { kind: 'model' }, uuid, message: { type: 'assistant', role: 'assistant', content: [{ type: 'text', text }] } } as never).catch(() => undefined)
+  }
+  await prompt('帮我看看按钮', 'u-1', 'composer')
+  await reply('好', 'a-1')
+  expect((await numbers()).turnNo).toBe(1)
+  // lemo-watch 的提醒（插件发的）开头的一轮：回复记 0；同样的话也不会按原文对到 T01 上
+  await prompt('⏰ 提醒：30 秒到了', 'p-1', 'plugin')
+  await reply('好', 'a-2')
+  let r = await numbers()
+  expect(r.turnNo).toBe(0)
+  expect(r.replies.ids['a-1']).toBe(1)
+  expect(r.replies.ids['a-2']).toBe(0)
+  expect(r.replies.texts['好']).toBe(0)
+  // 助手交回（peer）也一样
+  await prompt('<agent-message from="x">报告</agent-message>', 'p-2', 'peer')
+  await reply('收到报告', 'a-3')
+  expect((await numbers()).replies.ids['a-3']).toBe(0)
+  // 用户本人发的：照常 T02
+  await prompt('再改一下颜色', 'u-2', 'composer')
+  await reply('改好了', 'a-4')
+  r = await numbers()
+  expect(r.seq).toBe(2)
+  expect(r.replies.ids['a-4']).toBe(2)
+  // 斜杠命令（skill）：命令本身不编号，这一轮的回复也不借 T02
+  await $.prompt.submit({ text: '/dataviz 画个图', origin: { kind: 'composer' } } as never)
+  await $.turn.start({ text: '/dataviz 画个图', turnId: 't-skill' })
+  await reply('画好了', 'a-5')
+  r = await numbers()
+  expect(r.seq).toBe(2)
+  expect(r.replies.ids['a-5']).toBe(0)
+  // 路径开头、当消息发出去的照常带号（编过号以后 turn.start 不再改成 0）
+  await prompt('/tmp 下有什么', 'u-3', 'composer')
+  await reply('有两个文件', 'a-6')
+  r = await numbers()
+  expect(r.seq).toBe(3)
+  expect(r.replies.ids['a-6']).toBe(3)
+})
+
+test('编号：斜杠命令一输入就清号（加载词不带上一条的号）；一轮跑着时输入的命令不动那一轮的号；不经过用户输入的 skill 也不借号', { plugins: [probe] }, async ($, on) => {
+  mock.clock(on)
+  mock.store(on, { lang: 'zh' })
+  on('prompt.submit', async ($$, e) => ({ text: e.text }))
+  on('turn.start', async ($$, e) => ({ turnId: e.turnId }))
+  on('turn.complete', async () => ({ text: '' }))
+  const turnNo = async () => JSON.parse(((await $.command.run({ command: 'probe', args: 'read-numbers {}' } as never)) as { text: string }).text).turnNo
+  const done = { answer: '好', durationMs: 1000, isAborted: false, reason: 'answer' }
+  const send = async (text: string, uuid: string) => {
+    await $.prompt.submit({ text, origin: { kind: 'composer' } } as never)
+    await $.session.append({ door: 'prompt', origin: { kind: 'composer' }, uuid, message: { type: 'user', role: 'user', content: [{ type: 'text', text }] } } as never).catch(() => undefined)
+    await $.turn.start({ text, turnId: `t-${uuid}` })
+  }
+  await send('帮我看看按钮', 'u-1')
+  // 这一轮还在跑：输入 /lemo-mod（马上跑的命令）不清号，后面的回复、耗时行还是 T01
+  await $.prompt.submit({ text: '/lemo-mod', origin: { kind: 'composer' } } as never)
+  expect(await turnNo()).toBe(1)
+  await $.turn.complete({ ...done, turnId: 't-u-1' } as never)
+  // 停着时输入 skill 命令：这一轮还没开始（turn.start 之前加载词已经出来了），号先清掉
+  await $.prompt.submit({ text: '/dataviz 画个图', origin: { kind: 'composer' } } as never)
+  expect(await turnNo()).toBe(0)
+  await $.turn.start({ text: '/dataviz 画个图', turnId: 't-skill' })
+  expect(await turnNo()).toBe(0)
+  await $.turn.complete({ ...done, turnId: 't-skill' } as never)
+  await send('再改一下颜色', 'u-2')
+  expect(await turnNo()).toBe(2)
+  await $.turn.complete({ ...done, turnId: 't-u-2' } as never)
+  // 定时任务、/loop 跑的 skill：没有用户输入，这一轮也不借 T02
+  await $.turn.start({ text: '/dataviz 再画一张', turnId: 't-loop' })
+  expect(await turnNo()).toBe(0)
+})
+
 const FACTS = { model: 'claude-test', promptModel: 'claude-test', surfaces: ['terminal'], tools: [], outputStyle: null, traits: [] } as never
 
 test('系统提示词：编号说明默认不加；在安全页打开后多一段固定的说明（T01 是第几条消息）；bare 时不加', { plugins: [probe] }, async ($, on) => {
@@ -468,6 +550,25 @@ test('声音开关：没装 lemo-sound、lemo-voice 而有会出声的 mod 时�
   ui = await mount()
   expect(await ui.find({ key: 'core-mute' })).toBeUndefined()
   await ui.unmount()
+})
+
+test('终端面板在输入框上方（inline）时和停在旁边一样：写键盘提示，按钮编数字（ctrl+x Tab 一样进得去）', { plugins: [probe] }, async ($, on) => {
+  mock.clock(on)
+  mock.store(on)
+  await $.command.run({ command: 'probe', args: 'join ' + JSON.stringify({ mod: 'lemo-pomodoro', title: { zh: '番茄钟', en: 'Focus' }, tabs: ['main'], uses: ['sound', 'speech'] }) } as never)
+  const inline = await mountChecked($, { ...HUB, surface: 'terminal', props: { ...HUB.props, placement: 'inline' } } as never)
+  await inline.press({ key: 'tab-behave' })
+  expect((await inline.find({ key: 'core-mute' }))?.props.hotkey).toBe('1')
+  expect(await inline.find({ key: 'lemo-hotkey-1' })).toBeDefined()
+  expect(await inline.find({ type: 'Text', text: /ctrl\+x Tab 进入面板/ })).toBeDefined()
+  await inline.unmount()
+  // 停在旁边（dock）时一样
+  const dock = await mountChecked($, { ...HUB, surface: 'terminal' })
+  expect((await dock.find({ key: 'core-mute' }))?.props.hotkey).toBe('1')
+  // 头部数 mod 时算上 lemo-core 自己：番茄钟加核心，2 个
+  expect(await dock.find({ type: 'Text', text: /· 2 个 mod$/ })).toBeDefined()
+  expect(await dock.find({ type: 'Text', text: /进入面板/ })).toBeDefined()
+  await dock.unmount()
 })
 
 test('终端面板：按卡片顺序给每张卡片标题行的按钮编数字热键，按钮前面画出号码；桌面不编', { plugins: [probe] }, async ($, on) => {

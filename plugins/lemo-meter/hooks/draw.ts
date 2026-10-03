@@ -110,6 +110,17 @@ const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 // SVG 里估算文字宽度：中日韩字符按字号算，其他按 0.6 个字号
 const textW = (t: string, size: number) => [...t].reduce((n, ch) => n + ((ch.codePointAt(0) ?? 0) > 0x2e80 ? size : size * 0.6), 0)
 
+/** 放得下就原样；放不下就截到放得下，末尾加「…」；连一个字加「…」都放不下时给空串（不画） */
+function fitText(t: string, max: number, size: number): string {
+  if (textW(t, size) <= max) return t
+  let out = ''
+  for (const ch of t) {
+    if (textW(`${out}${ch}…`, size) > max) break
+    out += ch
+  }
+  return out === '' ? '' : `${out}…`
+}
+
 /** 胶囊、提示条的底色和字色，由风格颜色调出来 */
 function toneInk(c: Colors, tone: Tone): { bg: string; fg: string } {
   switch (tone) {
@@ -273,15 +284,24 @@ ${ticks(y)}`
     xEnd -= one.w + 8
   }
   const head = brand(c, motif, o.brand, o.brandSub)
-  // 提示条：标题右边，带一个小圆点，颜色跟着提示的 tone
+  // 提示条：标题右边，带一个小圆点，颜色跟着提示的 tone。
+  // 长了在右上角的胶囊前面收住（末尾加「…」），不从胶囊底下穿过去；完整的话 App 另外弹出来。
+  // 截断按估计的宽度算，实际更窄时再用 clipPath 按真实宽度剪掉
   let notice = ''
   if (o.notice !== null) {
     const { bg, fg } = toneInk(c, o.notice.tone)
     const x = head.end + 14
-    const w = 30 + textW(o.notice.text, 12)
-    notice = `<g><rect x="${x}" y="10" width="${w}" height="22" rx="11" fill="${bg}"/>
+    // 最左边的胶囊离右边框 -xEnd - 8，和提示条之间再空 10
+    const gap = -xEnd - 8 + 10
+    const room = f.guess - gap - x
+    const text = fitText(o.notice.text, room - 30, 12)
+    if (text !== '') {
+      const w = 30 + textW(text, 12)
+      notice = `<clipPath id="lm-notice"><rect x="${x}" y="0" width="${Math.max(0, room)}" style="width:max(0px, calc(100% - ${gap + x}px))" height="38"/></clipPath>
+<g clip-path="url(#lm-notice)"><rect x="${x}" y="10" width="${w}" height="22" rx="11" fill="${bg}"/>
 <circle cx="${x + 13}" cy="21" r="3.5" fill="${fg}"><animate attributeName="opacity" values="1;0.3;1" dur="1.2s" repeatCount="indefinite"/></circle>
-<text x="${x + 22}" y="25.5" font-size="12" font-weight="700" fill="${fg}">${esc(o.notice.text)}</text></g>`
+<text x="${x + 22}" y="25.5" font-size="12" font-weight="700" fill="${fg}">${esc(text)}</text></g>`
+    }
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${f.width}" height="${H}" font-family="${FONT}">
 ${paper(c, f.guess, H)}

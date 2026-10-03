@@ -1,7 +1,7 @@
 {
   "name": "lemo-meter",
   "displayName": "lemo-meter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "用量横条：输入框上方显示上下文、5 小时额度、花费和 git 分支；状态栏显示消息编号（已有自己的状态栏时默认关闭）；点「检查」才联网查新版本 / Usage meter: context, 5-hour quota, cost and git branch above the prompt; a status line with the message number (off by default if you have your own); checks for updates online only when you press Check",
   "author": { "name": "lemomo" },
   "license": "MIT",

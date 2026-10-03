@@ -51,11 +51,12 @@ function paneBottom(on: On) {
  * 假核心不写编号、上一轮统计、标签这几个状态。测试的 hook 在所有插件最底下，
  * 读 lemo-core 的这几个键时由它直接回答，别的照常往下走
  */
-function coreState(on: On, v: { seq?: number; lastTurn?: Turn; tags?: Record<string, string>; lang?: 'zh' | 'en'; style?: unknown }) {
+function coreState(on: On, v: { seq?: number; turnNo?: number; lastTurn?: Turn; tags?: Record<string, string>; lang?: 'zh' | 'en'; style?: unknown }) {
   on('state.get', async ($$, e, next) => {
     if (e.plugin === 'lemo-core') {
       const value =
         e.key === 'seq' ? v.seq
+        : e.key === 'turnNo' ? v.turnNo
         : e.key === 'lastTurn' ? v.lastTurn
         : e.key === 'tags' ? v.tags
         : e.key === 'lang' ? v.lang
@@ -77,9 +78,10 @@ function memFiles(on: On, files: Record<string, string>) {
   })
 }
 
-/** 替引擎接住用户发消息、一轮结束 */
+/** 替引擎接住用户发消息、一轮开始、一轮结束 */
 function engineBottom(on: On) {
   on('prompt.submit', async ($$, e) => ({ text: e.text }))
+  on('turn.start', async ($$, e) => ({ turnId: e.turnId }))
   on('turn.complete', async () => ({ text: '' }))
 }
 
@@ -170,6 +172,7 @@ test('日志：一轮结束往 ~/.claude/lemo-mod/journal.md 追加一行，面�
   await $.prompt.submit({ text, origin: { kind: 'composer' } } as never)
   // 后台任务通知不是用户本人发的，不算「用户那句话」
   await $.prompt.submit({ text: '<task-notification>后台任务完成</task-notification>', origin: { kind: 'task-notification' } } as never)
+  await $.turn.start({ text, turnId: 't1' })
   await $.turn.complete(done(45_000) as never)
   await clock.settle()
 
@@ -213,13 +216,67 @@ test('日志：提醒、后台通知引起的一轮，编号那一栏写「提�
     await $.session.append({ door: 'prompt', origin: { kind }, uuid: `u-${text.length}`, message: { type: 'user', role: 'user', content: [{ type: 'text', text }] } } as never).catch(() => undefined)
   }
   await append('plugin', '⏰ 提醒：30 秒到了。请用一两句话告诉用户现在进展到哪了、下一步做什么。')
+  await $.turn.start({ text: '⏰ 提醒', turnId: 't1' })
   await $.turn.complete(done(4_000) as never)
   await clock.settle()
   await append('task-notification', '<task-notification>后台任务完成</task-notification>')
+  await $.turn.start({ text: '', turnId: 't2' })
   await $.turn.complete(done(4_000) as never)
   await clock.settle()
   const lines = (files[LOG] ?? '').split('\n').filter(l => l.startsWith('- '))
   expect(lines).toEqual(['- 10-02 14:05 · demo · 提醒 · 4s · 1 步 · 0 次工具', '- 10-02 14:05 · demo · 后台 · 4s · 1 步 · 0 次工具'])
+})
+
+test('日志：斜杠命令（skill）开头的一轮，编号那一栏写「命令」，后面是输入的命令，不冒用上一条的编号和原文', { plugins: [testCore] }, async ($, on) => {
+  const clock = mock.clock(on, { now: new Date(2026, 9, 2, 14, 5).getTime() })
+  mock.store(on, { log: true })
+  mock.env(on, { HOME })
+  paneBottom(on)
+  // lemo-core 没给这一轮编号（turnNo 0），上一条用户消息是 T03
+  coreState(on, { seq: 3, turnNo: 0, lastTurn: { steps: 1, tools: 0, ms: 4_000 }, tags: { '3': 'code' } })
+  const files: Record<string, string> = {}
+  memFiles(on, files)
+  engineBottom(on)
+  on('session.start', async ($$, e) => ({ cwd: e.cwd }))
+  await $.session.start({ cwd: '/Users/tester/code/demo', surface: 'terminal', isInteractive: true })
+  await $.prompt.submit({ text: '/dataviz 画个图', origin: { kind: 'composer' } } as never)
+  await $.turn.start({ text: '/dataviz 画个图', turnId: 't1' })
+  await $.turn.complete(done(4_000) as never)
+  await clock.settle()
+  const lines = (files[LOG] ?? '').split('\n').filter(l => l.startsWith('- '))
+  expect(lines).toEqual(['- 10-02 14:05 · demo · 命令 · 4s · 1 步 · 0 次工具 · /dataviz 画个图'])
+})
+
+test('日志：一轮是谁引起的在这一轮开始时定：提醒之后跑的 skill 记「命令」；跑着时排队进来的话改不了正在跑那一轮', { plugins: [testCore] }, async ($, on) => {
+  const clock = mock.clock(on, { now: new Date(2026, 9, 2, 14, 5).getTime() })
+  mock.store(on, { log: true })
+  mock.env(on, { HOME })
+  paneBottom(on)
+  coreState(on, { seq: 3, turnNo: 0, lastTurn: { steps: 1, tools: 0, ms: 4_000 }, tags: { '3': 'code' } })
+  const files: Record<string, string> = {}
+  memFiles(on, files)
+  engineBottom(on)
+  on('session.start', async ($$, e) => ({ cwd: e.cwd }))
+  await $.session.start({ cwd: '/Users/tester/code/demo', surface: 'terminal', isInteractive: true })
+  const append = async (kind: string, text: string) => {
+    await $.session.append({ door: 'prompt', origin: { kind }, uuid: `u-${text.length}`, message: { type: 'user', role: 'user', content: [{ type: 'text', text }] } } as never).catch(() => undefined)
+  }
+  // 提醒那一轮：跑着的时候用户输入了一条命令（排队）
+  await append('plugin', '⏰ 提醒：30 秒到了。')
+  await $.turn.start({ text: '⏰ 提醒', turnId: 't1' })
+  await $.prompt.submit({ text: '/dataviz 画个图', origin: { kind: 'composer' } } as never)
+  await $.turn.complete(done(4_000) as never)
+  await clock.settle()
+  // 轮到这条命令（skill 不进对话记录）：跑着的时候用户又输入了一句话
+  await $.turn.start({ text: '/dataviz 画个图', turnId: 't2' })
+  await $.prompt.submit({ text: '再画一张', origin: { kind: 'composer' } } as never)
+  await $.turn.complete(done(4_000) as never)
+  await clock.settle()
+  const lines = (files[LOG] ?? '').split('\n').filter(l => l.startsWith('- '))
+  expect(lines).toEqual([
+    '- 10-02 14:05 · demo · 提醒 · 4s · 1 步 · 0 次工具',
+    '- 10-02 14:05 · demo · 命令 · 4s · 1 步 · 0 次工具 · /dataviz 画个图',
+  ])
 })
 
 test('日志：只留最近 500 行', { plugins: [testCore, probe] }, async ($, on) => {

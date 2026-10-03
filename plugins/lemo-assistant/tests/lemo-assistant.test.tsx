@@ -87,7 +87,7 @@ const peer = async ($: Engine, uuid: string, text: string) => {
   await $.session.append({ door: 'prompt', origin: { kind: 'peer' }, uuid, message: { type: 'user', role: 'user', content: [{ type: 'text', text }] } }).catch(() => undefined)
 }
 
-test('助手：被拒时卡片上显示短原因、横条提示一声，不往输入框里填（不盖掉用户的草稿）', { plugins: [testCore] }, async ($, on) => {
+test('助手：被自动模式的审核拦下时，卡片上说清原因和怎么办，横条提示一声，不往输入框里填（不盖掉用户的草稿）', { plugins: [testCore] }, async ($, on) => {
   mock.clock(on)
   mock.store(on)
   pane(on)
@@ -103,17 +103,26 @@ test('助手：被拒时卡片上显示短原因、横条提示一声，不往�
     expect(await ui.find({ type: 'Text', text: /^助手(\s|$)/ })).toBeDefined()
     expect(await ui.find({ key: 'assistant-offer' })).toBeDefined()
     await ui.press({ key: 'assistant-send' })
-    expect(await ui.find({ type: 'Text', text: /未通过自动模式审核/ })).toBeDefined()
+    // 没允许 Claude 派：先请用户允许，再让用户自己对 Claude 说（审核看得到这句）；或者换权限模式
+    expect(await ui.find({ type: 'Text', text: /自动模式的审核看不到你按了按钮。可以先按下面的按钮允许 Claude 派助手/ })).toBeDefined()
     // 原文很长，面板上只说短的
     expect(await ui.find({ type: 'Text', text: /classifier/ })).toBeUndefined()
     await ui.unmount()
   }
   expect(fills).toEqual([])
+  // 横条上只说为什么：怎么办写在卡片上（横条放不下长句，「下面的按钮」在横条上也找不到）
+  const off = '助手派出失败：自动模式的审核看不到你按了按钮。'
   const notices = (await lemoCalls($)).filter(c => c.op === 'notice').map(c => c.input)
   expect(notices).toEqual([
-    { text: '助手派出失败：未通过自动模式审核。', tone: 'red' },
-    { text: '助手派出失败：未通过自动模式审核。', tone: 'red' },
+    { text: off, tone: 'red' },
+    { text: off, tone: 'red' },
   ])
+  // 允许了 Claude 派：直接说怎么让 Claude 派
+  const ui = await mountChecked($, { ...HUB, surface: 'desktop' })
+  await ui.press({ key: 'assistant-offer' })
+  await ui.press({ key: 'assistant-send' })
+  expect(await ui.find({ type: 'Text', text: '助手派出失败：自动模式的审核看不到你按了按钮。可以直接对 Claude 说「派助手写三行周报」，或换成其他权限模式再按。' })).toBeDefined()
+  await ui.unmount()
 })
 
 test('助手：卡片只在「后台」页', { plugins: [testCore] }, async ($, on) => {

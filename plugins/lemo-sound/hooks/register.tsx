@@ -27,22 +27,29 @@ const LemoDeskRef = { plugin: 'lemo-core', key: 'desk' } as const
 const LemoTabRef = { plugin: 'lemo-core', key: 'tab' } as const
 const LemoModsRef = { plugin: 'lemo-core', key: 'mods' } as const
 const LemoSeqRef = { plugin: 'lemo-core', key: 'seq' } as const
+const LemoTurnNoRef = { plugin: 'lemo-core', key: 'turnNo' } as const
 
 /**
  * 画东西时要的风格和语言。读 lemo-core 的状态会订阅，lemo-core 一改自动重画；还没写过时用 $.lemo 兜底。
- * 面板（Pane）的 hook 要把 e.props 传进来：面板停在哪（placement）决定正文用什么颜色（见 shared/lemo.tsx 的 inkOf）
+ * 面板（Pane）的 hook 要把 e.props 传进来：面板停在哪（placement）决定正文用什么颜色（见 shared/lemo.tsx 的 inkOf），
+ * 面板宽度（bodyColumns）决定卡片说明在哪断行（见 shared/lemo.tsx 的 card）
  */
-async function look($: LemoEngine, pane?: { placement: 'dock' | 'inline' }): Promise<LemoLook> {
+async function look($: LemoEngine, pane?: { placement: 'dock' | 'inline'; bodyColumns?: number }): Promise<LemoLook> {
   const st = (await $.state.get(LemoStyleRef)).value ?? (await $.lemo.style({}))
   const lang = (await $.state.get(LemoLangRef)).value ?? (await $.lemo.lang({}))
   const theme = (await $.state.get(LemoThemeRef)).value ?? null
   const desk = (await $.state.get(LemoDeskRef)).value ?? null
-  return { st, c: st.colors, lang, theme, desk, inline: pane?.placement === 'inline' }
+  return { st, c: st.colors, lang, theme, desk, inline: pane?.placement === 'inline', ...(pane?.bodyColumns === undefined ? {} : { bodyColumns: pane.bodyColumns }) }
 }
 
 /** 用户本人发了几条消息（T01、T02…） */
 async function seqOf($: LemoEngine): Promise<number> {
   return (await $.state.get(LemoSeqRef)).value ?? 0
+}
+
+/** 这一轮回的是第几条消息：提醒、助手交回、斜杠命令开头的一轮是 0（不写号）。lemo-core 还没写过时当作 seq */
+async function turnNoOf($: LemoEngine): Promise<number> {
+  return (await $.state.get(LemoTurnNoRef)).value ?? (await seqOf($))
 }
 
 /** 统一面板现在显示哪一页：存的那页在这个界面上没有，就显示第一页 */

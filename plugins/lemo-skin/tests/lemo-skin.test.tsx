@@ -4,6 +4,7 @@ import type { On } from 'claude-code'
 
 import { lemoCalls, testCore } from './shared/test-core'
 import { mountChecked } from './shared/test-colors'
+import { width } from '../hooks/shared/lemo'
 
 // 测试的 $ 上没有 $.lemo（lemo-core 把它加在插件的 $ 上）：借一个内联插件的命令去调安全页用的三个方法。
 // /safety-probe caps | toggle <JSON> | off，回复是结果的 JSON
@@ -221,6 +222,22 @@ test('耗时行：写上编号、用时、这一轮几步几次工具', { plugin
   await old.unmount()
 })
 
+test('不是用户本人发消息开头的一轮（提醒、助手交回、斜杠命令，lemo-core 记 0）：回复抬头和耗时行都不写号', { plugins: [testCore] }, async ($, on) => {
+  mock.clock(on)
+  feed(on, { replies: { ids: { r0: 0 }, texts: {} }, turnRows: { d0: { n: 0, steps: 1, tools: 0 } } })
+  on('ui.render', { component: 'AssistantMessage' }, async () => ENGINE)
+  for (const surface of SURFACES) {
+    const a = await mountChecked($, { plugin: 'lemo-skin', surface, component: 'AssistantMessage', requestId: 'r0', props: { text: '好', isFirstOfReply: true } } as never)
+    expect(await a.find({ type: 'Text', text: /^\s回复\s$/ })).toBeDefined()
+    expect(await a.find({ type: 'Text', text: /T00/ })).toBeUndefined()
+    await a.unmount()
+    const d = await mountChecked($, { plugin: 'lemo-skin', surface, component: 'TurnDuration', requestId: 'd0', props: { word: 'Baked', durationMs: 2_000 } } as never)
+    expect(await d.find({ type: 'Text', text: ' ✓ 完成 ' })).toBeDefined()
+    expect(await d.find({ type: 'Text', text: ' · 1 步 · 0 次工具' })).toBeDefined()
+    await d.unmount()
+  }
+})
+
 test('工具行：开始时间、动词、对象、状态', { plugins: [testCore] }, async ($, on) => {
   mock.clock(on, { now: AT })
   // 测试里替引擎跑工具
@@ -285,7 +302,8 @@ test('工具行：Bash 命令、WebFetch 网址整条显示不截；展开组里
     expect(await multi.find({ type: 'Text', text: pad('echo a\necho b') })).toBeDefined()
     await multi.unmount()
     const web = await row(surface, { tool_use_id: 'l3', tool: 'WebFetch', input: { url: longUrl }, output: '' })
-    expect(await web.find({ type: 'Text', text: pad(longUrl.replace(/^https:\/\//, '')) })).toBeDefined()
+    // 网址照原样写全，https:// 也留着
+    expect(await web.find({ type: 'Text', text: pad(longUrl) })).toBeDefined()
     await web.unmount()
     // 别的工具照旧截到 48 列
     const grep = await row(surface, { tool_use_id: 'l4', tool: 'Grep', input: { pattern: 'x'.repeat(80) }, output: '' })
@@ -304,6 +322,51 @@ test('工具行：Bash 命令、WebFetch 网址整条显示不截；展开组里
     expect(await running.find({ type: 'Text', text: '进行中' })).toBeDefined()
     await running.unmount()
   }
+})
+
+test('工具行：终端对话栏窄时，对象按剩下的宽度截或另起一行，状态不夹在网址中间', { plugins: [testCore] }, async ($, on) => {
+  mock.clock(on, { now: AT })
+  on('ui.render', { component: 'ToolUse' }, async () => ENGINE)
+  const url = 'https://httpbin.org/get?a=1&b=2'
+  const row = (columns: number, props: Record<string, unknown>) =>
+    mountChecked($, {
+      plugin: 'lemo-skin', surface: 'terminal', component: 'ToolUse', requestId: String(props.tool_use_id), viewport: { columns, rows: 40 },
+      props: { isRunning: false, isErrored: false, isInterrupted: false, output: '', ...props },
+    } as never)
+  // 对话栏宽：网址和状态在同一行
+  const wide = await row(120, { tool_use_id: 'n1', tool: 'WebFetch', input: { url } })
+  type Tree = { props: { flexDirection?: string }; children?: unknown[] }
+  expect(((await wide.drawn()) as unknown as Tree).props.flexDirection).toBe('row')
+  expect(await wide.find({ type: 'Text', text: url })).toBeDefined()
+  await wide.unmount()
+  // 面板停在旁边、对话栏只剩 40 列：网址整条另起一行，状态那一行不带它
+  const narrow = await row(40, { tool_use_id: 'n2', tool: 'WebFetch', input: { url } })
+  const tree = (await narrow.drawn()) as unknown as Tree
+  expect(tree.props.flexDirection).toBe('column')
+  expect(JSON.stringify(tree.children?.[0])).not.toContain('httpbin')
+  expect(await narrow.find({ type: 'Text', text: url })).toBeDefined()
+  await narrow.unmount()
+  // 截短的对象（检索词）也按剩下的宽度截
+  const grep = await row(40, { tool_use_id: 'n3', tool: 'Grep', input: { pattern: 'x'.repeat(80) } })
+  const cut = await grep.find({ type: 'Text', text: /^x+…$/ })
+  expect(cut === undefined ? 99 : width(cut.text ?? '')).toBeLessThanOrEqual(40 - 16)
+  await grep.unmount()
+})
+
+test('工具组：英文界面开头大写（Ran 1 command, read 1 file），和单个工具行的动词一样', { plugins: [testCore] }, async ($, on) => {
+  mock.clock(on, { now: AT })
+  on('lemo.lang', async () => ({ value: 'en' as const }))
+  on('ui.render', { component: 'ToolGroup' }, async () => ENGINE)
+  const call = (tool: string, tool_use_id: string) => ({ tool, tool_use_id, input: {}, isRunning: false, isErrored: false, isInterrupted: false, output: '' })
+  const g = await mountChecked($, { plugin: 'lemo-skin', surface: 'terminal', component: 'ToolGroup', props: { calls: [call('Bash', 'e1'), call('Read', 'e2')], isActive: false, isExpanded: false } } as never)
+  expect(await g.find({ type: 'Text', text: 'Ran 1 command, read 1 file' })).toBeDefined()
+  // 一整段文字（时间、计数、点、状态套在一个 Text 里）：对话栏窄时整行一起折，不会几段各折各的
+  expect(((await g.drawn()) as unknown as { type: string }).type).toBe('Text')
+  await g.unmount()
+  // 开头是别的工具名（MCP 工具小写开头）：工具名照原样写，不改大小写
+  const m = await mountChecked($, { plugin: 'lemo-skin', surface: 'terminal', component: 'ToolGroup', props: { calls: [call('mcp__notes__search', 'e3'), call('Bash', 'e4')], isActive: false, isExpanded: false } } as never)
+  expect(await m.find({ type: 'Text', text: 'mcp__notes__search × 1, ran 1 command' })).toBeDefined()
+  await m.unmount()
 })
 
 test('工具组：折叠行换成「读取 1 个文件，运行 1 条命令」；别的 lemo mod 的工具不数，交给它们自己画', { plugins: [testCore] }, async ($, on) => {

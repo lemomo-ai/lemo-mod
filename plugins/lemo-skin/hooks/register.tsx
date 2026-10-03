@@ -34,22 +34,29 @@ const LemoDeskRef = { plugin: 'lemo-core', key: 'desk' } as const
 const LemoTabRef = { plugin: 'lemo-core', key: 'tab' } as const
 const LemoModsRef = { plugin: 'lemo-core', key: 'mods' } as const
 const LemoSeqRef = { plugin: 'lemo-core', key: 'seq' } as const
+const LemoTurnNoRef = { plugin: 'lemo-core', key: 'turnNo' } as const
 
 /**
  * 画东西时要的风格和语言。读 lemo-core 的状态会订阅，lemo-core 一改自动重画；还没写过时用 $.lemo 兜底。
- * 面板（Pane）的 hook 要把 e.props 传进来：面板停在哪（placement）决定正文用什么颜色（见 shared/lemo.tsx 的 inkOf）
+ * 面板（Pane）的 hook 要把 e.props 传进来：面板停在哪（placement）决定正文用什么颜色（见 shared/lemo.tsx 的 inkOf），
+ * 面板宽度（bodyColumns）决定卡片说明在哪断行（见 shared/lemo.tsx 的 card）
  */
-async function look($: LemoEngine, pane?: { placement: 'dock' | 'inline' }): Promise<LemoLook> {
+async function look($: LemoEngine, pane?: { placement: 'dock' | 'inline'; bodyColumns?: number }): Promise<LemoLook> {
   const st = (await $.state.get(LemoStyleRef)).value ?? (await $.lemo.style({}))
   const lang = (await $.state.get(LemoLangRef)).value ?? (await $.lemo.lang({}))
   const theme = (await $.state.get(LemoThemeRef)).value ?? null
   const desk = (await $.state.get(LemoDeskRef)).value ?? null
-  return { st, c: st.colors, lang, theme, desk, inline: pane?.placement === 'inline' }
+  return { st, c: st.colors, lang, theme, desk, inline: pane?.placement === 'inline', ...(pane?.bodyColumns === undefined ? {} : { bodyColumns: pane.bodyColumns }) }
 }
 
 /** 用户本人发了几条消息（T01、T02…） */
 async function seqOf($: LemoEngine): Promise<number> {
   return (await $.state.get(LemoSeqRef)).value ?? 0
+}
+
+/** 这一轮回的是第几条消息：提醒、助手交回、斜杠命令开头的一轮是 0（不写号）。lemo-core 还没写过时当作 seq */
+async function turnNoOf($: LemoEngine): Promise<number> {
+  return (await $.state.get(LemoTurnNoRef)).value ?? (await seqOf($))
 }
 
 /** 统一面板现在显示哪一页：存的那页在这个界面上没有，就显示第一页 */
@@ -151,8 +158,9 @@ function target(tool: string, input: unknown): string {
     case 'Grep':
     case 'Glob':
       return pick('pattern')
+    // 网址照原样写全（http 还是 https 也是要看的）
     case 'WebFetch':
-      return pick('url').replace(/^https?:\/\//, '')
+      return pick('url')
     case 'WebSearch':
       return pick('query')
     default:
@@ -366,7 +374,8 @@ export const register: Register = on => {
     }
     const lk = await look($)
     const S = STR[lk.lang]
-    const label = n === undefined ? word(lk, 'lemo-skin.replyBare', S.replyBare) : fill(word(lk, 'lemo-skin.reply', S.reply), { no: exp(n), n })
+    // 0：不是用户本人发消息开头的一轮（提醒、助手交回、斜杠命令），不带号
+    const label = n === undefined || n <= 0 ? word(lk, 'lemo-skin.replyBare', S.replyBare) : fill(word(lk, 'lemo-skin.reply', S.reply), { no: exp(n), n })
     const drawn = await next(e)
     const { Box, Text } = $.ui.resolve(e)
     return (
@@ -447,17 +456,19 @@ export const register: Register = on => {
     const S = STR[lk.lang]
     // 还是没记录的（没存过号的旧会话恢复时）不写编号：按画出来时的编号算，几行旧的会都写成同一个号或 T00。
     // 正在进行的会话里，记录晚一步写进来也没关系：读了 turnRows 就订阅了，写进来以后会重画
-    const label = rec === undefined
+    // 号是 0：不是用户本人发消息开头的一轮，也不写号（步数、工具数照写）
+    const label = rec === undefined || rec.n <= 0
       ? fill(word(lk, 'lemo-skin.turnDone', S.turnDone), { no: '', n: '' }).replace(/ {2,}/g, ' ')
       : fill(word(lk, 'lemo-skin.turnDone', S.turnDone), { no: exp(rec.n), n: rec.n })
     const stats = rec === undefined ? null : `${fill(plural(S.steps, rec.steps), { n: rec.steps })} · ${fill(plural(S.tools, rec.tools), { n: rec.tools })}`
-    const { Box, Text } = $.ui.resolve(e)
+    // 一整段文字：对话区很窄（比如面板停在旁边）时整行一起折，不会三段各折各的、错开
+    const { Text } = $.ui.resolve(e)
     return (
-      <Box flexDirection="row">
+      <Text>
         <Text backgroundColor={lk.c.accent} color={lk.c.onAccent} bold>{label}</Text>
         <Text color={lk.c.pencil}>{` · ${fmtDur(e.props.durationMs)}`}</Text>
         {stats === null ? null : <Text color={lk.c.pencil}>{` · ${stats}`}</Text>}
-      </Box>
+      </Text>
     )
   })
 
@@ -502,12 +513,16 @@ export const register: Register = on => {
       const k = c.tool === 'Read' || c.tool === 'Bash' || c.tool === 'ToolSearch' ? c.tool : c.tool === 'Grep' || c.tool === 'Glob' ? 'search' : c.tool
       tally.set(k, (tally.get(k) ?? 0) + 1)
     }
-    const what = [...tally]
+    const known = (k: string) => k === 'Read' || k === 'Bash' || k === 'search' || k === 'ToolSearch'
+    const joined = [...tally]
       .map(([k, n]) => {
         const p = k === 'Read' ? S.group.read : k === 'Bash' ? S.group.bash : k === 'search' ? S.group.search : k === 'ToolSearch' ? S.group.tools : S.group.other
         return fill(plural(p, n), { n, tool: k })
       })
       .join(S.group.sep)
+    // 英文开头大写（Ran 1 command），和单个工具行的动词（Run、Read）一样。
+    // 只改我们自己的句子：开头是别的工具名（mcp__…）时照原样写
+    const what = known([...tally.keys()][0] ?? '') ? joined.replace(/^[a-z]/, c => c.toUpperCase()) : joined
     const [label, tone]: [string, string] = calls.some(c => c.isRunning)
       ? [S.state.running, lk.c.ink]
       : calls.some(c => c.isErrored)
@@ -517,14 +532,15 @@ export const register: Register = on => {
       ? '·'.repeat(Math.max(2, Math.min(30, (e.viewport?.columns ?? 80) - (7 + width(what) + 2 + width(label)) - 8)))
       : '···'
     const { Box, Text } = $.ui.resolve(e)
-    // 恢复的旧会话不知道调用时间，就不写时间
+    // 恢复的旧会话不知道调用时间，就不写时间。
+    // 一整段文字：对话区很窄（面板停在旁边）时整行一起折，不会几段各折各的、错开（和耗时行一样）
     const row = (
-      <Box key="row" flexDirection="row">
+      <Text key="row">
         <Text color={lk.c.pencil}>{at === undefined ? '' : hhmm(at) + '  '}</Text>
         <Text color={lk.c.ink} bold>{what}</Text>
         <Text color={lk.c.grid}>{' ' + dots}</Text>
         <Text color={tone}>{' ' + label}</Text>
-      </Box>
+      </Text>
     )
     if (others === null) return row
     return (
@@ -549,9 +565,6 @@ export const register: Register = on => {
     const at = startedAt.get(id)
     const raw = target(tool, e.props.input).trim()
     const isFull = FULL_TARGET.has(tool)
-    // 整条显示的放不下一行（超过 48 列或者本身有换行）：状态那一行不带它，整条另起一行、自动换行
-    const isLong = isFull && (raw.includes('\n') || width(raw) > 48)
-    const what = isFull ? (isLong ? '' : raw) : clip(raw, 48)
     const [label, tone]: [string, string] = e.props.isRunning
       ? [S.state.running, lk.c.ink]
       : e.props.isErrored
@@ -560,6 +573,13 @@ export const register: Register = on => {
           ? [S.state.interrupted, lk.c.pencil]
           : [S.state.done, lk.c.pencil]
     const isTerm = e.surface === 'terminal'
+    // 对象在这一行里能占几列：最多 48；终端对话栏窄（面板停在旁边）时减去时间、动词、点、状态和空格，
+    // 不然对象会在行里折开，状态夹在中间（「…?a=1&b ·· done」下一行「=2」）
+    const fixed = (at === undefined ? 1 : 7) + width(verb) + 1 + 1 + 2 + 1 + width(label) + 2
+    const room = isTerm ? Math.max(8, Math.min(48, (e.viewport?.columns ?? 80) - fixed)) : 48
+    // 整条显示的放不下一行（超过能占的宽或者本身有换行）：状态那一行不带它，整条另起一行、自动换行
+    const isLong = isFull && (raw.includes('\n') || width(raw) > room)
+    const what = isFull ? (isLong ? '' : raw) : clip(raw, room)
     const dots = isTerm ? '·'.repeat(Math.max(2, Math.min(30, (e.viewport?.columns ?? 80) - (7 + width(verb) + 2 + width(what) + 2 + width(label)) - 8))) : '···'
     const { Box, Text } = $.ui.resolve(e)
     // 路径和命令：桌面上画成浅底的小标签，终端里用方格线的颜色

@@ -1,7 +1,7 @@
 {
   "name": "lemo-ask",
   "displayName": "lemo-ask",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "提问弹窗标题：在提问弹窗顶部显示消息编号和问题数，选项不变 / Question header: shows the message number and question count above the question dialog; options unchanged",
   "author": { "name": "lemomo" },
   "license": "MIT",

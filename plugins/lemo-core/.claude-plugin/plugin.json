@@ -1,7 +1,7 @@
 {
   "name": "lemo-core",
   "displayName": "lemo-core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "核心：风格、中英文界面、消息编号和 /lemo-mod 面板，以及给其他 lemo mod 用的 $.lemo / Core: styles, zh/en interface, message numbers and the /lemo-mod panel, plus the $.lemo helpers other lemo mods use",
   "author": { "name": "lemomo" },
   "license": "MIT",

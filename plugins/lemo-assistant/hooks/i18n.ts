@@ -19,7 +19,13 @@ const zh = {
   files: '\n\n当前目录里的文件（新改的在前）：{files}',
   done: '周报已完成',
   fail: '助手派出失败：{why}。',
-  auto: '未通过自动模式审核',
+  // 自动模式的审核只看对话，看不到用户按了按钮，会拦下按钮派的助手。说清楚原因，再给两条不绕过审核的路：
+  // 让用户自己对 Claude 说（审核看得到这句），或者换权限模式。没允许 Claude 派时要先允许
+  auto: '自动模式的审核看不到你按了按钮',
+  // 接在「派出失败」那句后面：中文句号后直接接，英文空一格
+  tipSep: '',
+  autoTip: '可以直接对 Claude 说「派助手写三行周报」，或换成其他权限模式再按。',
+  autoTipOff: '可以先按下面的按钮允许 Claude 派助手，再对 Claude 说「派助手写三行周报」；或换成其他权限模式再按。',
   noStart: '未启动',
   empty: '助手已完成，但没有返回内容',
   // 安全页上的两行（lemo.caps）。不带风格味道：安全页要一眼看懂
@@ -51,7 +57,10 @@ const en: AssistantStrings = {
   files: '\n\nFiles here (most recently changed first): {files}',
   done: 'Report ready',
   fail: 'Could not send the assistant: {why}.',
-  auto: 'did not pass the auto mode check',
+  auto: 'the auto mode check cannot see that you pressed the button',
+  tipSep: ' ',
+  autoTip: 'Ask Claude to "send the assistant to write a three-line report", or switch to another permission mode and press it again.',
+  autoTipOff: 'Press the button below to let Claude send it, then ask Claude to "send the assistant to write a three-line report"; or switch to another permission mode and press it again.',
   noStart: 'not started',
   empty: 'The assistant finished but returned nothing',
   cap: {

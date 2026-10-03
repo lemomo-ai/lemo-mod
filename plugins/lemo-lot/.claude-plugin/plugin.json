@@ -1,7 +1,7 @@
 {
   "name": "lemo-lot",
   "displayName": "lemo-lot",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "抽签：给 Claude 增加抽签工具 draw_lot，抽到的签显示为签文卡片 · 默认关闭，在「安全」页开启 / Lots: adds a draw_lot tool for Claude and shows drawn lots as fortune cards · off by default, switch on in Safety",
   "author": { "name": "lemomo" },
   "license": "MIT",

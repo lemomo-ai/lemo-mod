@@ -190,6 +190,55 @@ test('横条：提示出在横条上（终端顶替底行）', { plugins: [testC
   await desktop.unmount()
 })
 
+test('横条：终端地方不够时一级一级减：先不画小画，再改成一行用量', { plugins: [testCore] }, async ($, on) => {
+  mock.clock(on)
+  engine(on)
+  // 对话区 32 列：刻度尺（26 列）加右上角收起按钮（留 4 列）放得下，测试风格的小画（4 列，再空 2 列）放不下
+  const mid = await mountChecked($, { ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: 32 } })
+  expect(await mid.find({ type: 'Raster' })).toBeUndefined()
+  expect(await mid.find({ type: 'Text', text: /├/ })).toBeDefined()
+  await mid.unmount()
+  // 28 列：刻度尺本身放得下，但右端会被收起按钮「[-]」盖住数值：改成一行用量，右边同样留出 4 列，下面照常是底行
+  for (const bodyColumns of [28, 24]) {
+    const narrow = await mountChecked($, { ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns } })
+    expect(await narrow.find({ type: 'Raster' })).toBeUndefined()
+    expect(await narrow.find({ type: 'Text', text: /├/ })).toBeUndefined()
+    const brief = await narrow.find({ type: 'Text', text: /^\S+ \S+ · \S+ \S+$/ })
+    expect(brief?.props.wrap).toBe('truncate')
+    expect((await narrow.find({ type: 'Box', key: 'meter-brief' }))?.props.paddingRight).toBe(4)
+    await narrow.unmount()
+  }
+  // 面板在输入框上方、横条只给两行：同样改成一行用量
+  const two = await mountChecked($, { ...BAND, surface: 'terminal', props: { ...BAND.props, maxRows: 2 } })
+  expect(await two.find({ type: 'Text', text: /├/ })).toBeUndefined()
+  expect(await two.find({ type: 'Text', text: /^\S+ \S+ · \S+ \S+$/ })).toBeDefined()
+  await two.unmount()
+})
+
+test('横条：终端只给一行时，有提示就只写提示', { plugins: [testCore] }, async ($, on) => {
+  mock.clock(on)
+  engine(on)
+  on('state.get', { plugin: 'lemo-core', key: 'notice' }, async () => ({ value: { value: NOTICE, version: 1 } }))
+  const one = await mountChecked($, { ...BAND, surface: 'terminal', props: { ...BAND.props, maxRows: 1 } })
+  expect(await one.find({ type: 'Text', text: /拦下了一次强推/ })).toBeDefined()
+  expect(await one.find({ type: 'Text', text: /^\S+ \S+ · \S+ \S+$/ })).toBeUndefined()
+  await one.unmount()
+})
+
+test('横条：桌面上长提示在右上角胶囊前面收住，末尾加「…」，不从胶囊底下穿过去', { plugins: [testCore] }, async ($, on) => {
+  mock.clock(on)
+  engine(on)
+  const long = '已开启：提示音、朗读、编号说明、Claude 可派助手、抽签工具、日志、压缩后自动摘要、限时 · 在 /lemo-mod 安全 中修改'
+  on('state.get', { plugin: 'lemo-core', key: 'notice' }, async () => ({ value: { value: { text: long, tone: 'ink', until: 5000 }, version: 1 } }))
+  const desktop = await mountChecked($, { ...BAND, surface: 'desktop' })
+  const svg = String((await desktop.find({ type: 'Svg' }))?.props.source)
+  expect(svg).toContain('已开启：提示音')
+  expect(svg).not.toContain('中修改')
+  expect(svg).toContain('…</text>')
+  expect(svg).toContain('clip-path="url(#lm-notice)"')
+  await desktop.unmount()
+})
+
 test('横条：风格没有像素小画时终端不画，motif 为 none 时桌面不画烧瓶', { plugins: [testCore] }, async ($, on) => {
   mock.clock(on)
   engine(on)

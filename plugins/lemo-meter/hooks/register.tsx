@@ -32,22 +32,29 @@ const LemoDeskRef = { plugin: 'lemo-core', key: 'desk' } as const
 const LemoTabRef = { plugin: 'lemo-core', key: 'tab' } as const
 const LemoModsRef = { plugin: 'lemo-core', key: 'mods' } as const
 const LemoSeqRef = { plugin: 'lemo-core', key: 'seq' } as const
+const LemoTurnNoRef = { plugin: 'lemo-core', key: 'turnNo' } as const
 
 /**
  * 画东西时要的风格和语言。读 lemo-core 的状态会订阅，lemo-core 一改自动重画；还没写过时用 $.lemo 兜底。
- * 面板（Pane）的 hook 要把 e.props 传进来：面板停在哪（placement）决定正文用什么颜色（见 shared/lemo.tsx 的 inkOf）
+ * 面板（Pane）的 hook 要把 e.props 传进来：面板停在哪（placement）决定正文用什么颜色（见 shared/lemo.tsx 的 inkOf），
+ * 面板宽度（bodyColumns）决定卡片说明在哪断行（见 shared/lemo.tsx 的 card）
  */
-async function look($: LemoEngine, pane?: { placement: 'dock' | 'inline' }): Promise<LemoLook> {
+async function look($: LemoEngine, pane?: { placement: 'dock' | 'inline'; bodyColumns?: number }): Promise<LemoLook> {
   const st = (await $.state.get(LemoStyleRef)).value ?? (await $.lemo.style({}))
   const lang = (await $.state.get(LemoLangRef)).value ?? (await $.lemo.lang({}))
   const theme = (await $.state.get(LemoThemeRef)).value ?? null
   const desk = (await $.state.get(LemoDeskRef)).value ?? null
-  return { st, c: st.colors, lang, theme, desk, inline: pane?.placement === 'inline' }
+  return { st, c: st.colors, lang, theme, desk, inline: pane?.placement === 'inline', ...(pane?.bodyColumns === undefined ? {} : { bodyColumns: pane.bodyColumns }) }
 }
 
 /** 用户本人发了几条消息（T01、T02…） */
 async function seqOf($: LemoEngine): Promise<number> {
   return (await $.state.get(LemoSeqRef)).value ?? 0
+}
+
+/** 这一轮回的是第几条消息：提醒、助手交回、斜杠命令开头的一轮是 0（不写号）。lemo-core 还没写过时当作 seq */
+async function turnNoOf($: LemoEngine): Promise<number> {
+  return (await $.state.get(LemoTurnNoRef)).value ?? (await seqOf($))
 }
 
 /** 统一面板现在显示哪一页：存的那页在这个界面上没有，就显示第一页 */
@@ -85,6 +92,8 @@ type Cap = Awaited<ReturnType<EngineInterface['lemo']['caps']>>[number]
 
 // 桌面代码字体一格大约多少像素，只用来估算宽度
 const CELL_PX = 7.8
+// 终端横条第一行右端留给引擎收起按钮「[-]」的格数（按钮 3 格，再空一格）
+const FOLD = 4
 
 type Badge = Core['badges'][number]
 type Shown = Badge & { text: string | { zh: string; en: string } }
@@ -322,12 +331,13 @@ async function drawBand($: EngineInterface, e: RenderInput<'AbovePrompt'>): Prom
     )
   }
   const sample = word(lk, 'lemo-meter.tbandSample', S.tband.sample)
+  // 底行放不下时截掉，不折行：折出来的行会把刻度尺往上挤，分支名也会断成「⎇」和「main」两行
   let foot: RenderChildren
   if (shown !== null) {
-    foot = <Text {...termTone(lk, shown.tone)} bold>{` ● ${shown.text} `}</Text>
+    foot = <Text {...termTone(lk, shown.tone)} bold wrap="truncate">{` ● ${shown.text} `}</Text>
   } else {
     foot = (
-      <Text color={lk.c.pencil}>
+      <Text color={lk.c.pencil} wrap="truncate">
         {`${sample} ${exp(n)}${u.usd === null ? '' : ` · ${money(u.usd)}`}`}
         {pills.map((p, i) => (
           <Text key={`badge-${i}`} color={lk.c.pencil}>
@@ -339,6 +349,29 @@ async function drawBand($: EngineInterface, e: RenderInput<'AbovePrompt'>): Prom
       </Text>
     )
   }
+  // 地方不够时一级一级往下减：先不画小画，刻度尺也放不下（面板停在旁边、对话区很窄，或者面板在输入框上方、
+  // 只给一两行）时改成一行文字。不然刻度尺会被挤成竖排，引擎再把多出来的行收成「↓ 3 more」。
+  // 引擎在横条第一行的右端画收起按钮「[-]」（3 格）：第一行右边留出 FOLD 格，数值不被它盖住
+  const room = e.props.bodyColumns
+  const rows = e.props.maxRows
+  const pending = word(lk, 'lemo-meter.pending', S.band.pending)
+  const rowW = cols + 1 + width(ruler(0).before) + 1 + width(ruler(0).after) + 1 + Math.max(width(pending), 4)
+  if (room < rowW + FOLD || rows < 3) {
+    const val = (v: number | null) => (v === null ? pending : pct(v))
+    const brief = (
+      <Box key="meter-brief" paddingRight={FOLD}>
+        <Text {...ink} wrap="truncate">{`${ctxLabel} ${val(u.ctx)} · ${quotaLabel} ${val(u.quota)}`}</Text>
+      </Box>
+    )
+    // 只给一行时：有提示就只写提示，没有就只写用量
+    if (rows < 2) return shown !== null ? <Box paddingRight={FOLD}>{foot}</Box> : brief
+    return (
+      <Box flexDirection="column">
+        {brief}
+        {foot}
+      </Box>
+    )
+  }
   const meter = (
     <Box flexDirection="column">
       {scale('meter-ctx', ctxLabel, u.ctx)}
@@ -348,15 +381,18 @@ async function drawBand($: EngineInterface, e: RenderInput<'AbovePrompt'>): Prom
   )
   const sprite = lk.st.sprite
   if (e.surface === 'terminal' && sprite !== null && sprite.frames.length > 0) {
-    // 风格的像素小画：每秒换一帧
-    const { Raster } = $.ui.resolve(e)
+    // 风格的像素小画：每秒换一帧。放不下（宽度或行数不够）就不画
     const frame = sprite.frames[tick % sprite.frames.length] ?? sprite.frames[0] ?? []
-    return (
-      <Box flexDirection="row" gap={2} alignItems="center">
-        <Raster key="meter-sprite" {...spriteCells(sprite.palette, frame)} />
-        {meter}
-      </Box>
-    )
+    const cells = spriteCells(sprite.palette, frame)
+    if (room >= cells.columns + 2 + rowW + FOLD && rows >= cells.rows) {
+      const { Raster } = $.ui.resolve(e)
+      return (
+        <Box flexDirection="row" gap={2} alignItems="center">
+          <Raster key="meter-sprite" {...cells} />
+          {meter}
+        </Box>
+      )
+    }
   }
   return meter
 }

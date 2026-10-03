@@ -274,6 +274,11 @@ declare module 'claude-code' {
       modsOpen: boolean
       /** 用户本人发了几条消息（T01、T02…） */
       seq: number
+      /**
+       * 这一轮回的是第几条消息：用户本人发消息开头的一轮是那条的号；提醒、助手交回、斜杠命令（skill）开头的一轮是 0，
+       * 回复标签、耗时行、加载词都不写号（不借用上一条的号）。没写过时读到 undefined，当作 seq
+       */
+      turnNo: number
       numbers: LemoNumbers
       replies: LemoNumbers
       turnRows: Readonly<Record<string, LemoTurnRow>>

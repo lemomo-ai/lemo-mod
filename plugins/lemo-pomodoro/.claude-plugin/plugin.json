@@ -1,7 +1,7 @@
 {
   "name": "lemo-pomodoro",
   "displayName": "lemo-pomodoro",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "番茄钟：专注计时，到点在横条提醒并询问下一步 · 点了才开始 / Focus timer: times your focus, then a reminder on the band and a question about what next · starts only when you press it",
   "author": { "name": "lemomo" },
   "license": "MIT",

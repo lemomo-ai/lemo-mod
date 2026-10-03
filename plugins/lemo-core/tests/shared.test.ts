@@ -2,7 +2,7 @@
 import { expect, test } from 'claude-code/testing'
 import type { ButtonProps, ElementConstructor, RenderElement } from 'claude-code'
 
-import { cjkKeep, clip, cmdWord, replyKey, steady, visibleTabs, width, wrapCjk } from '../hooks/shared/lemo'
+import { cardCols, cjkKeep, clip, cmdWord, replyKey, steady, visibleTabs, width, wrapCjk } from '../hooks/shared/lemo'
 
 test('steady：上一次画里有、样子没变的按钮交回同一个元素，按下去跑最新的 onPress；样子变了、隔了一次没画、没写 key、同一次画里 key 重复都新建；终端照原样', () => {
   // 假的 Button：每建一个给一个新 handle（和引擎一样），子节点原样记下
@@ -118,4 +118,12 @@ test('wrapCjk：按宽度断行，英文词和路径不拆，标点不放行首�
   for (const l of wrapCjk('说「T03」，Claude 才知道', 9)) expect(l).not.toMatch(/^[」，]/)
   expect(wrapCjk('abcdefghijklmnopqrstuvwxyz', 10)).toEqual(['abcdefghij', 'klmnopqrst', 'uvwxyz'])
   expect(wrapCjk('短', 10)).toEqual(['短'])
+})
+
+test('cardCols：卡片说明按面板实际能占的宽度断行，很窄的面板也不按更宽的断（不然每行末尾被截掉）', () => {
+  expect(cardCols(80)).toBe(73)
+  expect(cardCols(20)).toBe(13)
+  const desc = '读取 README、docs 和最近改动的文件，写三行周报'
+  for (const l of wrapCjk(desc, cardCols(20))) expect(width(l)).toBeLessThanOrEqual(13)
+  expect(wrapCjk(desc, cardCols(20)).join('').replace(/\s/g, '')).toBe(desc.replace(/\s/g, ''))
 })

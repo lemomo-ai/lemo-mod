@@ -34,22 +34,29 @@ const LemoDeskRef = { plugin: 'lemo-core', key: 'desk' } as const
 const LemoTabRef = { plugin: 'lemo-core', key: 'tab' } as const
 const LemoModsRef = { plugin: 'lemo-core', key: 'mods' } as const
 const LemoSeqRef = { plugin: 'lemo-core', key: 'seq' } as const
+const LemoTurnNoRef = { plugin: 'lemo-core', key: 'turnNo' } as const
 
 /**
  * 画东西时要的风格和语言。读 lemo-core 的状态会订阅，lemo-core 一改自动重画；还没写过时用 $.lemo 兜底。
- * 面板（Pane）的 hook 要把 e.props 传进来：面板停在哪（placement）决定正文用什么颜色（见 shared/lemo.tsx 的 inkOf）
+ * 面板（Pane）的 hook 要把 e.props 传进来：面板停在哪（placement）决定正文用什么颜色（见 shared/lemo.tsx 的 inkOf），
+ * 面板宽度（bodyColumns）决定卡片说明在哪断行（见 shared/lemo.tsx 的 card）
  */
-async function look($: LemoEngine, pane?: { placement: 'dock' | 'inline' }): Promise<LemoLook> {
+async function look($: LemoEngine, pane?: { placement: 'dock' | 'inline'; bodyColumns?: number }): Promise<LemoLook> {
   const st = (await $.state.get(LemoStyleRef)).value ?? (await $.lemo.style({}))
   const lang = (await $.state.get(LemoLangRef)).value ?? (await $.lemo.lang({}))
   const theme = (await $.state.get(LemoThemeRef)).value ?? null
   const desk = (await $.state.get(LemoDeskRef)).value ?? null
-  return { st, c: st.colors, lang, theme, desk, inline: pane?.placement === 'inline' }
+  return { st, c: st.colors, lang, theme, desk, inline: pane?.placement === 'inline', ...(pane?.bodyColumns === undefined ? {} : { bodyColumns: pane.bodyColumns }) }
 }
 
 /** 用户本人发了几条消息（T01、T02…） */
 async function seqOf($: LemoEngine): Promise<number> {
   return (await $.state.get(LemoSeqRef)).value ?? 0
+}
+
+/** 这一轮回的是第几条消息：提醒、助手交回、斜杠命令开头的一轮是 0（不写号）。lemo-core 还没写过时当作 seq */
+async function turnNoOf($: LemoEngine): Promise<number> {
+  return (await $.state.get(LemoTurnNoRef)).value ?? (await seqOf($))
 }
 
 /** 统一面板现在显示哪一页：存的那页在这个界面上没有，就显示第一页 */
@@ -112,6 +119,7 @@ const scan = atom({ plugin: 'lemo-core', key: 'scan' } as const, null as LemoSca
 const safeOk = atom({ plugin: 'lemo-core', key: 'safeOk' } as const, false)
 const capsRev = atom({ plugin: 'lemo-core', key: 'capsRev' } as const, 0)
 const seq = atom({ plugin: 'lemo-core', key: 'seq' } as const, 0)
+const turnNo = atom({ plugin: 'lemo-core', key: 'turnNo' } as const, 0)
 const numbers = atom({ plugin: 'lemo-core', key: 'numbers' } as const, { ids: {}, texts: {} } as LemoNumbers)
 const replies = atom({ plugin: 'lemo-core', key: 'replies' } as const, { ids: {}, texts: {} } as LemoNumbers)
 const turnRows = atom({ plugin: 'lemo-core', key: 'turnRows' } as const, {} as Readonly<Record<string, LemoTurnRow>>)
@@ -131,6 +139,13 @@ let curNote = false
 let speakGen = 0
 // 用户刚发出的消息文字：编号时和对话记录里的文字一起记，桌面上的消息靠它对上号
 let pendingText = ''
+// 用户刚输入的是斜杠命令：下一轮要是开始了（skill），就是这条命令开头的，不带编号。用户每输一次都重新判断。
+// counted：这次输入之后、这一轮开始之前已经编了号（像 /tmp 这样不是命令、当消息发出去的，照常带号）。
+// 每轮开始时用完就清掉，不留给下一轮（定时任务、/loop 跑的 skill 不经过用户输入，不会再清一次）
+let slashNext = false
+let counted = false
+// 有一轮正在跑（turn.start 到 turn.complete）。这时输入的命令（/lemo-mod 这种马上跑的）不动正在跑那一轮的号
+let busy = false
 // 「/名字」开头的是斜杠命令；名字里没有斜杠，所以 /Users/… 这种路径不算
 const SLASH = /^\/[A-Za-z][\w:.-]*(?=\s|$)/
 // /lemo-mod 的回复按 Markdown 画：照抄用户打的字（名字、风格名、不认的词）时，ASCII 标点前加反斜杠，
@@ -783,7 +798,12 @@ export const register: Register = on => {
   on('prompt.submit', async ($, e, next) => {
     if (NOT_PERSON.has(e.origin.kind)) return next(e)
     const text = e.text.trim()
-    pendingText = SLASH.test(text) ? '' : text
+    slashNext = SLASH.test(text)
+    counted = false
+    pendingText = slashNext ? '' : text
+    // 斜杠命令：加载词在这一轮开始（turn.start）之前就出来了，先把号清掉，头一下不会带着上一条的号。
+    // 像 /tmp 这样当消息发出去的，追加进对话记录时照常编号
+    if (slashNext && !busy) await update($, turnNo, () => 0)
     await setLang($, detectLang(e.text))
     return next(e)
   })
@@ -793,9 +813,17 @@ export const register: Register = on => {
   // 号存在会话状态里，mod 热重载、上下文压缩都不会重新数；新开会话从 T01 开始
   on('session.append', { door: 'prompt' }, async ($, e, next) => {
     const o = e.origin
-    if (e.agentId !== undefined || e.message.isMeta || o.kind === 'model' || o.kind === 'tool' || NOT_PERSON.has(o.kind)) return next(e)
+    if (e.agentId !== undefined || o.kind === 'model' || o.kind === 'tool') return next(e)
+    // 提醒、助手交回、后台通知这类发进主对话的：接下来的回复不带号
+    if (NOT_PERSON.has(o.kind)) {
+      await update($, turnNo, () => 0)
+      return next(e)
+    }
+    if (e.message.isMeta) return next(e)
     const n = (await read($, seq)) + 1
     await update($, seq, () => n)
+    await update($, turnNo, () => n)
+    counted = true
     // 每一段文字都记下来（桌面会在用户的话前后附上别的内容），再加上 prompt.submit 时记下的原文
     const keys = e.message.content
       .map(b => ('text' in b && typeof b.text === 'string' ? b.text.trim() : ''))
@@ -813,14 +841,14 @@ export const register: Register = on => {
     return next(e)
   })
 
-  // Claude 的回复记下属于第几条消息
+  // Claude 的回复记下属于第几条消息。不是用户本人发消息开头的一轮记 0（照样记下，按原文对时不会对到以前同样的回复上）
   on('session.append', { door: 'response' }, async ($, e, next) => {
     if (e.agentId !== undefined) return next(e)
-    const n = await read($, seq)
+    const n = await read($, turnNo)
     const keys = e.message.content
       .map(b => ('text' in b && typeof b.text === 'string' ? replyKey(b.text) : ''))
       .filter(k => k !== '')
-    if (n > 0 && keys.length > 0) {
+    if ((n > 0 || (await read($, seq)) > 0) && keys.length > 0) {
       await update($, replies, m => ({
         ...m,
         ids: recent({ ...m.ids, [e.uuid]: n }),
@@ -837,7 +865,7 @@ export const register: Register = on => {
   // 追加时记下它属于第几条消息、这一轮几步几次工具，mod 重载以后也对得上
   on('session.append', { door: 'notice' }, async ($, e, next) => {
     if (e.agentId === undefined && e.message.name === 'turn_duration') {
-      const row: LemoTurnRow = { n: await read($, seq), steps: curSteps, tools: curTools }
+      const row: LemoTurnRow = { n: await read($, turnNo), steps: curSteps, tools: curTools }
       await update($, turnRows, m => recent({ ...m, [e.uuid]: row }))
       keepRow($, k => {
         k.t[e.uuid] = [row.n, row.steps, row.tools]
@@ -850,6 +878,12 @@ export const register: Register = on => {
   on('turn.start', async ($, e, next) => {
     curSteps = 0
     curTools = 0
+    // 斜杠命令（skill）开头的一轮：不借用上一条的号。接着上一轮说的（text 为空）不算
+    const t = e.text.trim()
+    if (!counted && (SLASH.test(t) || (slashNext && t !== ''))) await update($, turnNo, () => 0)
+    slashNext = false
+    counted = false
+    busy = true
     return next(e)
   })
 
@@ -863,6 +897,7 @@ export const register: Register = on => {
   })
 
   on('turn.complete', async ($, e, next) => {
+    if (e.agentId === undefined) busy = false
     if (e.agentId === undefined && !e.isAborted) {
       const done: LemoTurn = { steps: curSteps, tools: curTools, ms: e.durationMs }
       await update($, lastTurn, () => done)
@@ -976,7 +1011,9 @@ export const register: Register = on => {
     const { Box, Text } = el
     const title = word(lk, 'lemo-core.title', s.title)
     const chip = <Text backgroundColor={lk.c.accent} color={lk.c.onAccent} bold>{` ${title} · ${exp(n)} `}</Text>
-    const count = list.length === 1 ? s.modsOne : fill(s.modsCount, { n: list.length })
+    // 装了几个 mod：报到的那些加上 lemo-core 自己（和 README、/plugin 里数的一样，全装是 16 个）
+    const modCount = list.length + 1
+    const count = modCount === 1 ? s.modsOne : fill(s.modsCount, { n: modCount })
     const sub = <Text color={lk.c.pencil}>{`${s.style.title} ${lk.st.name[lk.lang]} · ${count}`}</Text>
 
     let head = (
@@ -1154,14 +1191,17 @@ export const register: Register = on => {
           title: ss.manualTitle,
           desc: ss.manualDesc,
           cols,
+          // 和上面的开关行一样：名字一行（开关行写「已开」的位置写它会做的事），说明另起一行
           extra: (
-            <Box flexDirection="column">
+            <Box flexDirection="column" gap={1}>
               {manual.map(c => (
-                <Box key={`cap-m-${c.mod}-${c.id}`} flexDirection="row" gap={1}>
-                  <Box flexShrink={0}>
-                    <Text bold {...ink}>{c.title[L]}</Text>
-                  </Box>
-                  <Box flexShrink={1}>{dim(`${ss.kinds[c.kind]} · ${c.desc[L]}`, `cap-md-${c.mod}-${c.id}`, cols - width(c.title[L]) - 1)}</Box>
+                <Box key={`cap-m-${c.mod}-${c.id}`} flexDirection="column">
+                  <Text bold {...ink}>
+                    {c.title[L]}
+                    <Text bold={false} color={lk.c.ink}>{`  ${ss.kinds[c.kind]}`}</Text>
+                    <Text bold={false} color={lk.c.pencil}>{`  ${c.mod}`}</Text>
+                  </Text>
+                  {dim(c.desc[L], `cap-md-${c.mod}-${c.id}`)}
                 </Box>
               ))}
             </Box>

@@ -93,7 +93,7 @@ const en: SkinStrings = {
   kinds: { question: 'question', code: 'code', debug: 'debug', chat: 'chat' },
   unfold: {
     title: 'Unfold tool rows',
-    desc: 'Expands grouped tool rows (like "read 3 files") into one row per call',
+    desc: 'Expands grouped tool rows (like "Read 3 files") into one row per call',
     on: 'Unfolded · click to collapse',
     off: 'Unfold',
     mode: 'unfolded',

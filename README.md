@@ -128,7 +128,14 @@ claude plugin install lemo-mod@lemo-mod
 
 装好后重开 Claude Code，终端或桌面 App 的 Code 标签都可以。面板会先显示安全页，你可以试听音效和朗读，打开想用的功能，再点「我看完了」。终端宽度不足 144 列时，输入 `/lemo-mod 安全` 打开。之后每开一个新会话，横条上都会列出已开启的功能，不会有功能悄悄运行。
 
-`lemo-mod` 会装上全部 16 个 mod。每个 mod 都是独立插件，可以在 `/plugin` 里单独关闭。
+`lemo-mod` 会装上全部 16 个 mod，每个 mod 都是独立插件。不想要哪处外观或哪个功能，在安全页关掉就行。想把某个 mod 整个关掉，要先关掉合集 `lemo-mod`，再关那个 mod。合集只是一份清单，关掉它不影响任何 mod。在 `/plugin` 里按这个顺序操作，或者运行：
+
+```sh
+claude plugin disable lemo-mod@lemo-mod
+claude plugin disable lemo-spinner@lemo-mod
+```
+
+重新打开合集，16 个 mod 会一起打开。
 
 想要最好的效果，请让 Claude Code 的主题和终端本身的明暗保持一致，比如黑底终端配深色主题。主题用 `/theme` 设置。桌面 App 用浅色模式效果最好。
 
@@ -141,7 +148,14 @@ claude plugin install lemo-mod@lemo-mod
 
 Then restart Claude Code, in the terminal or in the desktop app's Code tab. The panel starts on the Safety page. Preview the sounds and the voice if you like, turn on what you want, and press **I have read this**. In a terminal narrower than 144 columns, type `/lemo-mod safety` to open it. After that, each new session lists what is on in the band, so nothing runs quietly.
 
-`lemo-mod` installs all 16 mods. Each one is its own plugin, so you can turn any of them off in `/plugin`.
+`lemo-mod` installs all 16 mods, and each one is its own plugin. To drop one look or feature, turn it off on the Safety page. To turn a whole mod off, first turn off the `lemo-mod` bundle, then the mod. The bundle is only a list, so turning it off leaves every mod on. Do this in `/plugin` in that order, or run:
+
+```sh
+claude plugin disable lemo-mod@lemo-mod
+claude plugin disable lemo-spinner@lemo-mod
+```
+
+Turning the bundle back on turns all 16 mods on again.
 
 For the best look, match Claude Code's theme to your terminal's light or dark background, for example a dark theme on a dark terminal. Set the theme with `/theme`. In the desktop app, light mode looks best.
 
@@ -201,6 +215,8 @@ Lemo Lab · Lucky Koi · Cassie · Peeky · Sprouty · Chubby Bun · Choo-Choo �
 
 你开启的功能在 VS Code 和 `claude -p` 里同样生效，只是没有界面。
 
+桌面 App 用自动模式时，面板上的「派助手写周报」会被自动模式的审核拦下，因为审核看不到你按了按钮。可以先打开「Claude 可派助手」（「安全」页或助手卡片上都能开），再直接对 Claude 说「派助手写三行周报」；或换成其他权限模式再按。
+
 风格、开关和安全确认只保存一份，所有项目和会话通用，终端和桌面 App 共用。如果从本地文件夹添加 marketplace 或用 `--plugin-dir` 加载，桌面 App 会单独保存一份，需要在两边各确认一次。
 
 | Where | What you see |
@@ -210,6 +226,8 @@ Lemo Lab · Lucky Koi · Cassie · Peeky · Sprouty · Chubby Bun · Choo-Choo �
 | VS Code chat panel and `claude -p` | No interface |
 
 Features you turn on still work in VS Code and `claude -p`, just without the interface.
+
+In the desktop app's auto mode, the panel's **Write a report** button is stopped by the auto mode check, which cannot see that you pressed it. Turn on **Claude can send the assistant** (on the Safety page or the assistant card), then ask Claude to send the assistant to write a three-line report; or switch to another permission mode and press it again.
 
 Your style, switches and safety confirmation are saved once for all projects and sessions, and shared by the terminal and the desktop app. If you add the marketplace from a local folder or load the plugins with `--plugin-dir`, the desktop app keeps its own copy, so you confirm once on each side.
 

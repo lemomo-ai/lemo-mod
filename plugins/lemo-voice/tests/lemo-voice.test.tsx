@@ -27,7 +27,7 @@ test('朗读卡片：两个界面都画出标题、开关和试听；装上时�
     expect(await ui.find({ type: 'Text', text: /朗读/ })).toBeDefined()
     // 假核心没写过朗读开关，按 lemo-core 的默认（关）显示
     expect((await ui.find({ key: 'voice-speech' }))?.props.label).toBe('打开')
-    expect(await ui.find({ type: 'Text', text: /已关闭，试听仍可播放/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /已关闭/ })).toBeDefined()
     expect(await ui.find({ key: 'voice-hear', text: '试听' })).toBeDefined()
     await ui.unmount()
   }

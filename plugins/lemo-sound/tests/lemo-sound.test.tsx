@@ -30,7 +30,7 @@ test('面板卡片：两个界面都有开关和三个试听按钮；装上时�
     expect((await ui.find({ key: 'sound-deny' }))?.props.label).toBe('限时中止')
     expect(await ui.find({ type: 'Text', text: /^提示音/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /调用工具、一轮结束/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /已关闭，试听仍可播放/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /已关闭/ })).toBeDefined()
     await ui.unmount()
   }
 })
@@ -149,7 +149,7 @@ test('打开以后：按钮变成「已开 · 点击关闭」，说明里不再�
     const r = await $.command.run({ command: 'lemo-mod', args: '静音' } as never)
     expect(JSON.stringify(r)).toContain('已静音。')
     expect((await ui.find({ key: 'sound-mute' }))?.props.label).toBe('打开')
-    expect(await ui.find({ type: 'Text', text: /已关闭，试听仍可播放/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /已关闭/ })).toBeDefined()
     await ui.unmount()
   }
 })
