@@ -1,0 +1,19 @@
+{
+  "name": "lemo-skin",
+  "displayName": "lemo-skin",
+  "version": "0.1.0",
+  "description": "换皮：消息加编号 T01、T02，回复标注「回复 T03」，工具行和耗时行使用风格样式 / Skin: messages numbered T01, T02, replies marked \"Reply T03\", tool rows and turn lines use the style",
+  "author": {
+    "name": "lemomo"
+  },
+  "license": "MIT",
+  "keywords": [
+    "lemo-mod",
+    "mod",
+    "skin"
+  ],
+  "dependencies": [
+    "lemo-core"
+  ],
+  "types": "./types/index.d.ts"
+}

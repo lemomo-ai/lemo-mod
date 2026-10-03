@@ -1,0 +1,11 @@
+{
+  "name": "lemo-todo",
+  "displayName": "lemo-todo",
+  "version": "0.1.0",
+  "description": "笔记：在面板记下笔记 · 压缩后自动摘要（Haiku）默认关闭，在「安全」页开启 / Notes: keep notes in the panel · Auto summary after compaction (Haiku) is off by default, switch on in Safety",
+  "author": { "name": "lemomo" },
+  "license": "MIT",
+  "keywords": ["lemo-mod", "mod", "notes"],
+  "dependencies": ["lemo-core"],
+  "types": "./types/index.d.ts"
+}

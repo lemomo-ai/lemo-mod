@@ -1,0 +1,11 @@
+{
+  "name": "lemo-guard",
+  "displayName": "lemo-guard",
+  "version": "0.1.0",
+  "description": "限时：Claude 单轮工作超时自动中止 · 等你确认的时间不计 · 默认关闭，在「安全」页开启 / Time limit: stops Claude when a turn runs over time · time waiting for you does not count · off by default, switch on in Safety",
+  "author": { "name": "lemomo" },
+  "license": "MIT",
+  "keywords": ["lemo-mod", "mod", "guard"],
+  "dependencies": ["lemo-core"],
+  "types": "./types/index.d.ts"
+}

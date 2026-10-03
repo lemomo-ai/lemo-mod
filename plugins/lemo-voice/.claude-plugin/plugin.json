@@ -1,0 +1,10 @@
+{
+  "name": "lemo-voice",
+  "displayName": "lemo-voice",
+  "version": "0.1.0",
+  "description": "朗读：超过 30 秒的任务完成时，朗读编号和用时 · 默认关闭，在「安全」页开启 / Speech: reads out the message number and time when a task over 30 s finishes · off by default, switch on in Safety",
+  "author": { "name": "lemomo" },
+  "license": "MIT",
+  "keywords": ["lemo-mod", "mod", "speech"],
+  "dependencies": ["lemo-core"]
+}

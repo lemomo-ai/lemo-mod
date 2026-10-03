@@ -1,0 +1,11 @@
+{
+  "name": "lemo-spinner",
+  "displayName": "lemo-spinner",
+  "version": "0.1.0",
+  "description": "加载词：工作时的加载词换成风格词并附上消息编号 · 已自定义转圈文字时默认关闭 / Spinner words: spinner words while Claude works come from the style, with the message number · off by default if you set your own",
+  "author": { "name": "lemomo" },
+  "license": "MIT",
+  "keywords": ["lemo-mod", "mod", "spinner"],
+  "dependencies": ["lemo-core"],
+  "types": "./types/index.d.ts"
+}

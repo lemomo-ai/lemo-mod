@@ -1,0 +1,96 @@
+{
+  "name": "lemo-mod",
+  "owner": {
+    "name": "lemomo"
+  },
+  "metadata": {
+    "description": "lemomo 的 Claude Code mod 合集。装全部：/plugin install lemo-mod@lemo-mod / lemomo's Claude Code mods. Install them all: /plugin install lemo-mod@lemo-mod"
+  },
+  "plugins": [
+    {
+      "name": "lemo-core",
+      "source": "./plugins/lemo-core",
+      "description": "核心：风格、中英文界面、消息编号和 /lemo-mod 面板，以及给其他 lemo mod 用的 $.lemo / Core: styles, zh/en interface, message numbers and the /lemo-mod panel, plus the $.lemo helpers other lemo mods use"
+    },
+    {
+      "name": "lemo-skin",
+      "source": "./plugins/lemo-skin",
+      "description": "换皮：消息加编号 T01、T02，回复标注「回复 T03」，工具行和耗时行使用风格样式 / Skin: messages numbered T01, T02, replies marked \"Reply T03\", tool rows and turn lines use the style"
+    },
+    {
+      "name": "lemo-spinner",
+      "source": "./plugins/lemo-spinner",
+      "description": "加载词：工作时的加载词换成风格词并附上消息编号 · 已自定义转圈文字时默认关闭 / Spinner words: spinner words while Claude works come from the style, with the message number · off by default if you set your own"
+    },
+    {
+      "name": "lemo-ask",
+      "source": "./plugins/lemo-ask",
+      "description": "提问弹窗标题：在提问弹窗顶部显示消息编号和问题数，选项不变 / Question header: shows the message number and question count above the question dialog; options unchanged"
+    },
+    {
+      "name": "lemo-meter",
+      "source": "./plugins/lemo-meter",
+      "description": "用量横条：输入框上方显示上下文、5 小时额度、花费和 git 分支；状态栏显示消息编号（已有自己的状态栏时默认关闭）；点「检查」才联网查新版本 / Usage meter: context, 5-hour quota, cost and git branch above the prompt; a status line with the message number (off by default if you have your own); checks for updates online only when you press Check"
+    },
+    {
+      "name": "lemo-guard",
+      "source": "./plugins/lemo-guard",
+      "description": "限时：Claude 单轮工作超时自动中止 · 等你确认的时间不计 · 默认关闭，在「安全」页开启 / Time limit: stops Claude when a turn runs over time · time waiting for you does not count · off by default, switch on in Safety"
+    },
+    {
+      "name": "lemo-sound",
+      "source": "./plugins/lemo-sound",
+      "description": "音效：调用工具、一轮结束、限时中止时播放提示音 · 默认关闭，在「安全」页开启 / Sounds: plays sounds on tool calls, turn ends and time-limit stops · off by default, switch on in Safety"
+    },
+    {
+      "name": "lemo-voice",
+      "source": "./plugins/lemo-voice",
+      "description": "朗读：超过 30 秒的任务完成时，朗读编号和用时 · 默认关闭，在「安全」页开启 / Speech: reads out the message number and time when a task over 30 s finishes · off by default, switch on in Safety"
+    },
+    {
+      "name": "lemo-tone",
+      "source": "./plugins/lemo-tone",
+      "description": "说话方式：简短模式（每次回答不超过三句）、记录口吻（首行说明看了什么，末行给出结论） · 默认关闭，在「安全」页开启 / Tone: Brief mode (three sentences or fewer) and Notebook voice (opens with what it looked at, closes with a conclusion) · off by default, switch on in Safety"
+    },
+    {
+      "name": "lemo-pomodoro",
+      "source": "./plugins/lemo-pomodoro",
+      "description": "番茄钟：专注计时，到点在横条提醒并询问下一步 · 点了才开始 / Focus timer: times your focus, then a reminder on the band and a question about what next · starts only when you press it"
+    },
+    {
+      "name": "lemo-watch",
+      "source": "./plugins/lemo-watch",
+      "description": "定时提醒：N 秒后代你给 Claude 发消息，请它汇报进度 · 点了才开始 / Reminder: sends Claude a message for you after N seconds, asking for a progress update · starts only when you press it"
+    },
+    {
+      "name": "lemo-recap",
+      "source": "./plugins/lemo-recap",
+      "description": "会话小结：把本次会话汇总成三行摘要 · 点了才生成，对话越长用量越多 / Session recap: summarizes this session in three lines · runs only when you press it; longer conversations use more"
+    },
+    {
+      "name": "lemo-todo",
+      "source": "./plugins/lemo-todo",
+      "description": "笔记：在面板记下笔记 · 压缩后自动摘要（Haiku）默认关闭，在「安全」页开启 / Notes: keep notes in the panel · Auto summary after compaction (Haiku) is off by default, switch on in Safety"
+    },
+    {
+      "name": "lemo-journal",
+      "source": "./plugins/lemo-journal",
+      "description": "记录：面板显示每轮统计 · 日志和自动分类默认关闭，在「安全」页开启 / Journal: per-turn stats in the panel · Log and Auto tags are off by default, switch on in Safety"
+    },
+    {
+      "name": "lemo-lot",
+      "source": "./plugins/lemo-lot",
+      "description": "抽签：给 Claude 增加抽签工具 draw_lot，抽到的签显示为签文卡片 · 默认关闭，在「安全」页开启 / Lots: adds a draw_lot tool for Claude and shows drawn lots as fortune cards · off by default, switch on in Safety"
+    },
+    {
+      "name": "lemo-assistant",
+      "source": "./plugins/lemo-assistant",
+      "description": "助手：只读子 agent（Haiku），写三行周报 · 点按钮才派；「Claude 可派助手」默认关闭，在「安全」页开启 / Assistant: a read-only subagent (Haiku) that writes a three-line report · sent only when you press its button; \"Claude can send the assistant\" is off by default, switch on in Safety"
+    },
+    {
+      "name": "lemo-mod",
+      "source": "./plugins/lemo-mod",
+      "description": "lemo-mod 合集：一次装上全部 lemo mod · /lemo-mod 打开面板 / lemo-mod bundle: installs every lemo mod · open the panel with /lemo-mod"
+    }
+  ]
+}

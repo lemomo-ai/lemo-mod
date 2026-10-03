@@ -1,0 +1,7 @@
+# 引擎每次加载 mod 时自动生成的类型文件（每个 mod 的 .claude-plugin/types/ 都是）
+**/.claude-plugin/types/
+.DS_Store
+node_modules/
+
+# 只留在本地、不公开的工作文档（计划、写法规范）
+docs/

@@ -1,0 +1,32 @@
+{
+  "name": "lemo-mod",
+  "displayName": "lemo-mod（全部 / all）",
+  "version": "0.1.0",
+  "description": "lemo-mod 合集：一次装上全部 lemo mod · /lemo-mod 打开面板 / lemo-mod bundle: installs every lemo mod · open the panel with /lemo-mod",
+  "author": {
+    "name": "lemomo"
+  },
+  "license": "MIT",
+  "keywords": [
+    "lemo-mod",
+    "bundle"
+  ],
+  "dependencies": [
+    "lemo-core",
+    "lemo-skin",
+    "lemo-spinner",
+    "lemo-ask",
+    "lemo-meter",
+    "lemo-guard",
+    "lemo-sound",
+    "lemo-voice",
+    "lemo-tone",
+    "lemo-pomodoro",
+    "lemo-watch",
+    "lemo-recap",
+    "lemo-todo",
+    "lemo-journal",
+    "lemo-lot",
+    "lemo-assistant"
+  ]
+}
