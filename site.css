@@ -6,7 +6,7 @@ body.gallery .topbar { position: static; }
 .app { display: grid; grid-template-columns: var(--rail-w) minmax(0, 1fr); gap: 32px; max-width: 1640px; margin: 0 auto; padding-inline: 24px; padding-block: 0 64px; }
 
 /* ---------- 左边：风格列表 ---------- */
-.rail { position: sticky; top: env(safe-area-inset-top, 0px); align-self: start; max-height: calc(100vh - env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 18px; padding-block: 28px 20px; box-sizing: border-box; min-width: 0; }
+.rail { position: sticky; top: env(safe-area-inset-top, 0px); align-self: start; max-height: calc(100vh / var(--ui, 1) - env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 18px; padding-block: 28px 20px; box-sizing: border-box; min-width: 0; }
 .brand { display: flex; flex-direction: column; gap: 4px; padding-inline: 8px; }
 .brand h1 { font-size: 30px; line-height: 1.15; font-weight: 600; letter-spacing: -.01em; }
 .count { font-size: 12.5px; color: var(--muted); }
@@ -203,3 +203,23 @@ body.gallery .topbar { position: static; }
 body.gallery { background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; background-position: -1px -1px; }
 .item[aria-current] { background: var(--navy); color: var(--on-navy); border-color: var(--navy); box-shadow: 3px 3px 0 var(--lemon); }
 .views { border-radius: 12px; box-shadow: 0 0 0 2px var(--navy), 8px 8px 0 2px var(--lemon); }
+
+/* ---------- 窄屏看大图：窗口缩成小图看不清，点开搬进全屏层，按看得清的大小画，上下左右拖、双指缩放 ---------- */
+.enlarge { display: none; }
+@media (max-width: 900px) {
+  .views { cursor: zoom-in; }
+  .enlarge { display: inline-flex; align-items: center; gap: 6px; align-self: center; margin-top: 6px; border: 2px solid var(--navy); background: var(--lemon); color: var(--on-lemon); font: inherit; font-size: 14px; font-weight: 600; padding: 7px 16px; border-radius: 9px; box-shadow: 3px 3px 0 var(--navy); cursor: pointer; }
+  .enlarge::before { content: ""; width: 12px; height: 12px; border: 2px solid currentColor; border-radius: 50%; box-sizing: border-box; box-shadow: 4px 4px 0 -2.5px currentColor; }
+}
+.zoomer { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; }
+.zoomer[hidden] { display: none; }
+.zoomer-bar { display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; background: var(--bar-bg); border-bottom: 1px solid var(--line); }
+.zoomer-bar b { font-weight: 600; font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.zoomer-bar .seg button { padding: 4px 10px; font-size: 13px; }
+.zoomer-bar .seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px var(--line); }
+.zoomer-close { border: 2px solid var(--navy); background: var(--navy); color: var(--on-navy); font: inherit; font-size: 13px; font-weight: 600; padding: 5px 12px; border-radius: 8px; cursor: pointer; flex-shrink: 0; }
+.zoomer-body { flex: 1; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 16px 26px 26px 16px; }
+:root.zoomed body { overflow: hidden; }
+.zoomer .views { height: auto !important; width: max-content; cursor: auto; }
+.zoomer .view, .zoomer .desk-wrap, .zoomer .win-term { height: auto; }
+.zoomer .desk-wrap, .zoomer .term-body { overflow: visible; }

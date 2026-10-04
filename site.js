@@ -9,9 +9,9 @@
 
   const T = {
     zh: { title: '风格', count: n => `${n} 套 · 终端和桌面 App`, cli: '终端 CLI', desk: '桌面 App', views: '窗口', mark: '标出 mod 画的', pickLabel: '选风格',
-      light: '明', dark: '暗', tabs: { main: '常用', behave: '行为', bg: '后台', safe: '安全' }, loading: '载入中…', failed: '没载入，刷新试试', missing: '这一页没有截图' },
+      light: '明', dark: '暗', tabs: { main: '常用', behave: '行为', bg: '后台', safe: '安全' }, loading: '载入中…', failed: '没载入，刷新试试', missing: '这一页没有截图', enlarge: '点开看大图', close: '关闭' },
     en: { title: 'Styles', count: n => `${n} styles · terminal and desktop app`, cli: 'Terminal (CLI)', desk: 'Desktop app', views: 'Window', mark: 'Show mod parts', pickLabel: 'Pick a style',
-      light: 'Light', dark: 'Dark', tabs: { main: 'Main', behave: 'Behavior', bg: 'Background', safe: 'Safety' }, loading: 'Loading…', failed: 'Did not load. Refresh to try again', missing: 'No shot for this page' },
+      light: 'Light', dark: 'Dark', tabs: { main: 'Main', behave: 'Behavior', bg: 'Background', safe: 'Safety' }, loading: 'Loading…', failed: 'Did not load. Refresh to try again', missing: 'No shot for this page', enlarge: 'Tap to enlarge', close: 'Close' },
   }
   const TABS = ['main', 'behave', 'bg', 'safe']
   const root = document.documentElement
@@ -83,9 +83,41 @@
       b.tabIndex = on ? 0 : -1
       if (on && focus) b.focus()
     })
+    $('zoomer-views').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === k)))
     fit()
     if (k === 'desk') { const sc = $('desk-scroll'); sc.scrollTop = sc.scrollHeight }
   }
+
+  // ---------- 窄屏：点窗口看大图（10-04 用户：手机上窗口缩成小图，字看不清） ----------
+  // 把 .views 整个搬进全屏层（事件、分页都跟着走），关掉再搬回原处
+  let big = false
+  const narrow = () => { try { return matchMedia('(max-width: 900px)').matches } catch (_) { return false } }
+  function openBig() {
+    if (big) return
+    big = true
+    $('zoomer-title').textContent = $('name').textContent
+    $('zoomer-body').appendChild($('views'))
+    $('zoomer').hidden = false
+    root.classList.add('zoomed')
+    fit()
+    $('zoomer-body').scrollTo(0, 0)
+    $('zoomer-close').focus()
+  }
+  function closeBig() {
+    if (!big) return
+    big = false
+    $('enlarge').before($('views'))
+    $('zoomer').hidden = true
+    root.classList.remove('zoomed')
+    fit()
+    $('enlarge').focus()
+  }
+  $('enlarge').addEventListener('click', openBig)
+  // 小图上点哪儿都是打开大图，不去按小图里的按钮
+  $('views').addEventListener('click', e => { if (!big && narrow()) { e.preventDefault(); e.stopPropagation(); openBig() } }, true)
+  $('zoomer-close').addEventListener('click', closeBig)
+  $('zoomer-views').addEventListener('click', e => { const b = e.target.closest('button[data-view]'); if (b) setView(b.dataset.view) })
+  document.addEventListener('keydown', e => { if (big && e.key === 'Escape') closeBig() })
   $('view-tabs').addEventListener('click', e => {
     const b = e.target.closest('[role="tab"]')
     if (b && b.dataset.view !== v.view) setView(b.dataset.view)
@@ -137,6 +169,14 @@
   const DESK_W = 1492, DESK_H = 952
   let cols = 0
   function fit() {
+    // 看大图时按固定的、看得清的大小画：桌面 0.85 倍，终端 11px 字
+    if (big) {
+      $('desk-win').style.zoom = '0.85'
+      $('views').style.height = ''
+      const p = $('term-shot').querySelector('pre')
+      if (p) { p.style.fontSize = '11px'; p.style.lineHeight = '1.3' }
+      return
+    }
     const W = $('stage').clientWidth
     // 缩放比往下取到万分之一：缩完不会比舞台宽出零点几像素（不然桌面那边会冒出横向滚动条，比终端高一截）
     const z = Math.min(1, Math.max(0.24, Math.floor(W / DESK_W * 1e4) / 1e4))

@@ -71,6 +71,22 @@
     } catch (_) { select() }
   }
 
+  // 大屏整页等比放大（10-04 用户：4K 上只占中间一小块）：宽过 1920 以后按宽度放大，最多 2.2 倍，版式不变；
+  // 风格页再按高度封顶，标题和整个窗口留在第一屏。1920 以内照旧。--ui 给用到 100vh 的地方折算
+  function scale() {
+    const b = document.body
+    // 用窗口本身的宽（outerWidth 不随浏览器缩放变）封顶：有人按 ⌘- 缩小页面时，不要又自动放大回去
+    let z = Math.min(innerWidth, outerWidth || innerWidth) / 1920
+    if (b.classList.contains('gallery')) z = Math.min(z, innerHeight / GALLERY_H)
+    z = Math.max(1, Math.min(2.2, Math.floor(z * 100) / 100))
+    b.style.zoom = z > 1 ? String(z) : ''
+    root.style.setProperty('--ui', String(z))
+  }
+  // 风格页在 1800 以上宽、不放大时，从页顶到窗口下面那道黄影子的高度（量出来的）
+  const GALLERY_H = 1100
+  scale()
+  addEventListener('resize', scale)
+
   window.LEMO = { lang, theme, setLang, setTheme }
   reflect()
 })()
