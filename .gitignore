@@ -5,3 +5,12 @@ node_modules/
 
 # 只留在本地、不公开的工作文档（计划、写法规范）
 docs/
+
+# 只给 Claude 看的项目说明，不随产品发布
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+
+# 日志和本地环境变量
+*.log
+.env*
