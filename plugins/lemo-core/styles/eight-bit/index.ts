@@ -47,6 +47,7 @@ export const eightBit: LemoStyle = {
     cardFillDark: '#1A2A12',
     deskCardFill: '#F8FAF2',
     deskCardBorder: '#E2E8D2',
+    deskFigure: '#0F380F', // 屏上最深的绿：桌面卡片上的大字（横条、面板的数值和风格名）
   },
   // 加命、加分和像素闪光
   bubbles: ['1UP', '+1', '·', '* ·', '+'],

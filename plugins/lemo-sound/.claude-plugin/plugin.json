@@ -1,7 +1,7 @@
 {
   "name": "lemo-sound",
   "displayName": "lemo-sound",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "音效：调用工具、一轮结束、限时中止时播放提示音 · 默认关闭，在「安全」页开启 / Sounds: plays sounds on tool calls, turn ends and time-limit stops · off by default, switch on in Safety",
   "author": { "name": "lemomo" },
   "license": "MIT",

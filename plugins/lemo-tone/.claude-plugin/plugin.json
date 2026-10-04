@@ -1,7 +1,7 @@
 {
   "name": "lemo-tone",
   "displayName": "lemo-tone",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "说话方式：简短模式（每次回答不超过三句）、记录口吻（首行说明看了什么，末行给出结论） · 默认关闭，在「安全」页开启 / Tone: Brief mode (three sentences or fewer) and Notebook voice (opens with what it looked at, closes with a conclusion) · off by default, switch on in Safety",
   "author": { "name": "lemomo" },
   "license": "MIT",

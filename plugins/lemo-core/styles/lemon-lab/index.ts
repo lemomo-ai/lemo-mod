@@ -45,6 +45,7 @@ export const lemonLab: LemoStyle = {
     cardFillDark: '#262A31',
     deskCardFill: '#F7F9FC',
     deskCardBorder: '#E4ECF6',
+    deskFigure: '#1B1D1F', // 桌面卡片上的大字（横条、面板的数值和风格名）
   },
   bubbles: ['°', '∘ °', '○', '° ∘', '∘'],
   sprite: { palette: { w: '#8FB3D9', l: '#F2CF1D', o: '#FFFFFF' }, frames: FLASK },

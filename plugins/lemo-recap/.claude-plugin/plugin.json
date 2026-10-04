@@ -1,7 +1,7 @@
 {
   "name": "lemo-recap",
   "displayName": "lemo-recap",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "会话小结：把本次会话汇总成三行摘要 · 点了才生成，对话越长用量越多 / Session recap: summarizes this session in three lines · runs only when you press it; longer conversations use more",
   "author": { "name": "lemomo" },
   "license": "MIT",

@@ -1,6 +1,6 @@
 // 锦鲤（Koi）：岩彩画，敦煌壁画画师的那一盒矿物颜料——石青、石绿、朱砂、赭石、藤黄，铺在宣纸上。
 // 一切说成作画：回复是一幅画稿，工具在跑是着色，调 skill 是调一味色，完成是题款落印。
-// 石青只当底色用，上面写墨色字（桌面横条的大数字也用 onAccent，白字在浅色卡片上看不见）。
+// 石青只当底色用，上面写白字；桌面横条的大数字用墨色。
 // 风格 = 一包数据：颜色、点缀、像素小画、音效、语音，和各 mod 带风格味道的文字（words/ 下每个 mod 一个文件）。
 import type { LemoStyle, LemoText } from '../../types'
 
@@ -72,7 +72,7 @@ export const mineral: LemoStyle = {
     grid: '#B5674A', // 土红：壁画起稿的线
     pencil: '#8E8A82', // 淡墨灰
     accent: '#4B86C6', // 石青（二青），只做底色
-    onAccent: '#15181D', // 墨
+    onAccent: '#FFFFFF', // 强调色偏深，上面写白字（标签、竹签）
     red: '#D9472F', // 朱砂
     inkDark: '#24466E', // 花青，桌面上的深色字
     chip: '#E6EEF7', // 淡石青
@@ -82,6 +82,7 @@ export const mineral: LemoStyle = {
     cardFillDark: '#1F2630',
     deskCardFill: '#FBF8F1', // 熟宣
     deskCardBorder: '#ECE4D3',
+    deskFigure: '#15181D', // 墨：桌面卡片上的大字（横条、面板的数值和风格名）
   },
   // 研碎的矿石颜料粉
   bubbles: ['∴', '·', '∵', '· ·', '.·'],

@@ -47,6 +47,7 @@ export const mixtape: LemoStyle = {
     cardFillDark: '#2A2522',
     deskCardFill: '#FBF8F2',
     deskCardBorder: '#EEE5D4',
+    deskFigure: '#1A1C1B', // 桌面卡片上的大字（横条、面板的数值和风格名）
   },
   // 音符和 VU 表跳动的格子
   bubbles: ['♪', 'ılı', '♫', '·ıl', '♪ ·'],

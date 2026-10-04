@@ -1,7 +1,7 @@
 {
   "name": "lemo-watch",
   "displayName": "lemo-watch",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "定时提醒：N 秒后代你给 Claude 发消息，请它汇报进度 · 点了才开始 / Reminder: sends Claude a message for you after N seconds, asking for a progress update · starts only when you press it",
   "author": { "name": "lemomo" },
   "license": "MIT",

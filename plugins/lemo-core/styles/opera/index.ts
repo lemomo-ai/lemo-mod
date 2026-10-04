@@ -1,6 +1,6 @@
 // 脸谱（Mask，名字取自像素小画里的红脸谱）：站在京剧的戏台上——开锣、亮相、唱念做打、谢幕，锣鼓经打着点子。
 // 一切说成演戏：回复是一场戏，工具在跑是开演，调 skill 是角儿登场，完成是谢幕，提问是叫板。
-// 朱红只当底色用，上面写漆黑的字（桌面横条的大数字也用 onAccent，白字在浅色卡片上看不见）；金色做点缀。
+// 朱红只当底色用，上面写白字；桌面横条的大数字用漆黑；金色做点缀。
 // 风格 = 一包数据：颜色、点缀、像素小画、音效、语音，和各 mod 带风格味道的文字（words/ 下每个 mod 一个文件）。
 import type { LemoStyle, LemoText } from '../../types'
 
@@ -72,7 +72,7 @@ export const opera: LemoStyle = {
     grid: '#A08050', // 旧金：台口的雕花线
     pencil: '#938783', // 后台的灰
     accent: '#E5502F', // 朱红，只做底色
-    onAccent: '#170E0C', // 漆黑
+    onAccent: '#FFFFFF', // 强调色偏深，上面写白字（标签、竹签）
     red: '#E2445C', // 胭脂红：出错、拦截（和朱红底色分开）
     inkDark: '#2A1A16', // 漆黑，桌面上的深色字
     chip: '#FBEAE4', // 淡朱
@@ -82,6 +82,7 @@ export const opera: LemoStyle = {
     cardFillDark: '#22171A', // 漆器
     deskCardFill: '#FDF8F3',
     deskCardBorder: '#F1E3D6',
+    deskFigure: '#170E0C', // 漆黑：桌面卡片上的大字（横条、面板的数值和风格名）
   },
   // 台上的亮片和甩开的水袖
   bubbles: ['✦', '~', '✧', '~ ✦', '≈'],

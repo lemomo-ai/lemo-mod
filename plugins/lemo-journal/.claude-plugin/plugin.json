@@ -1,7 +1,7 @@
 {
   "name": "lemo-journal",
   "displayName": "lemo-journal",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "记录：面板显示每轮统计 · 日志和自动分类默认关闭，在「安全」页开启 / Journal: per-turn stats in the panel · Log and Auto tags are off by default, switch on in Safety",
   "author": { "name": "lemomo" },
   "license": "MIT",

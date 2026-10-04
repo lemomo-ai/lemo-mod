@@ -47,6 +47,7 @@ export const aquarium: LemoStyle = {
     cardFillDark: '#182A30',
     deskCardFill: '#F5FAFB',
     deskCardBorder: '#DDEDF0',
+    deskFigure: '#142229', // 深海：桌面卡片上的大字（横条、面板的数值和风格名）
   },
   // ><> 是游过去的小鱼，o O 是往上冒的气泡
   bubbles: ['><>', 'o', '°', 'o O', 'o'],

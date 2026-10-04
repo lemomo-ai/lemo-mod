@@ -552,7 +552,7 @@ test('风格和语言：带风格味道的文字从风格包取，英文界面�
     colors: {
       ink: '#6F8FE0', grid: '#7FA3CC', pencil: '#8A9099', accent: '#F2CF1D', onAccent: '#1B1D1F', red: '#E0524A',
       inkDark: '#2F4F96', chip: '#E9EFFA', bubble: '#8FB3D9', bubbleAccent: '#E2B714',
-      cardFillLight: '#FFFBEA', cardFillDark: '#262A31', deskCardFill: '#F7F9FC', deskCardBorder: '#E4ECF6',
+      cardFillLight: '#FFFBEA', cardFillDark: '#262A31', deskCardFill: '#F7F9FC', deskCardBorder: '#E4ECF6', deskFigure: '#1B1D1F',
     },
     bubbles: [], sprite: null, motif: 'none', icon: null,
     sounds: { tick: 'tick.wav', done: 'done.wav', deny: 'deny.wav' },

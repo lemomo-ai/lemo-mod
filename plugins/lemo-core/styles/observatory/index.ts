@@ -1,4 +1,4 @@
-// 望远镜（Telescope）：夜里在天文台开穹顶观星。蓝紫只当底色用，上面写深靛蓝字；星光金只做点缀（✦ ⋆ 这类窄字符）。
+// 望远镜（Telescope）：夜里在天文台开穹顶观星。蓝紫只当底色用，上面写白字；星光金只做点缀（✦ ⋆ 这类窄字符）。
 // 风格 = 一包数据：颜色、点缀、像素小画、音效、语音，和各 mod 带风格味道的文字（words/ 下每个 mod 一个文件）。
 // 世界观：每条消息是一个观测目标，Claude 的回复是一条观测记录，工具在跑 = 曝光中，调 skill = 换目镜。
 import type { LemoStyle, LemoText } from '../../types'
@@ -38,7 +38,7 @@ export const observatory: LemoStyle = {
     grid: '#7380BC', // 星图坐标线
     pencil: '#8C8DA6', // 夜色灰
     accent: '#978DFF', // 蓝紫，只做底色
-    onAccent: '#16123F', // 深靛蓝字
+    onAccent: '#FFFFFF', // 强调色偏深，上面写白字（标签、竹签）
     red: '#E2566A', // 观测用的红光
     inkDark: '#211C52', // 深靛蓝
     chip: '#ECEAFC',
@@ -48,6 +48,7 @@ export const observatory: LemoStyle = {
     cardFillDark: '#191733', // 夜空
     deskCardFill: '#F8F7FE',
     deskCardBorder: '#E5E2F7',
+    deskFigure: '#16123F', // 深靛蓝：桌面卡片上的大字（横条、面板的数值和风格名）
   },
   bubbles: ['✦', '⋆ ·', '✧', '· ⋆', '⋆'],
   sprite: { palette: { t: '#8577F2', L: '#D4CEFF', m: '#646C8E', s: '#F0B42E', S: '#FFDC7A' }, frames: TELESCOPE },

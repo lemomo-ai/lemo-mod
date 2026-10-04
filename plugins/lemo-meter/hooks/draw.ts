@@ -28,9 +28,9 @@ export function mix(a: string, b: string, t: number): string {
   return `#${ch(0)}${ch(1)}${ch(2)}`
 }
 
-// 浅一点：往桌面卡片底色那边调；深一点：往强调色底上的字那边调（风格里强调色只做底色，它上面的字是深色）
+// 浅一点：往桌面卡片底色那边调；深一点：往桌面卡片上的大字那边调
 const pale = (c: Colors, x: string, t: number) => mix(x, c.deskCardFill, t)
-const deep = (c: Colors, x: string, t: number) => mix(x, c.onAccent, t)
+const deep = (c: Colors, x: string, t: number) => mix(x, c.deskFigure, t)
 
 // ---------- 终端 ----------
 
@@ -175,7 +175,7 @@ function brand(c: Colors, motif: Style['motif'], title: string, subtitle: string
     end,
     svg: `<g transform="translate(24 21)">${mark}</g>
 <rect x="38" y="17" width="${w}" height="10" rx="2" fill="${c.accent}" opacity="0.5"/>
-<text x="40" y="26" font-size="14" font-weight="700" fill="${c.onAccent}" letter-spacing="0.5">${esc(title)}</text>${sub}`,
+<text x="40" y="26" font-size="14" font-weight="700" fill="${c.deskFigure}" letter-spacing="0.5">${esc(title)}</text>${sub}`,
   }
 }
 
@@ -273,7 +273,7 @@ ${bar}
 ${ticks(y)}`
   }
   const value = (y: number, v: number | null) =>
-    `<text x="-142" y="${y + 8}" font-size="12" font-weight="600" fill="${v === null ? c.pencil : c.onAccent}">${esc(v === null ? o.words.pending : `${Math.round(v)}%`)}</text>`
+    `<text x="-142" y="${y + 8}" font-size="12" font-weight="600" fill="${v === null ? c.pencil : c.deskFigure}">${esc(v === null ? o.words.pending : `${Math.round(v)}%`)}</text>`
   // 右上角的胶囊从右往左排：消息编号、各 mod 的胶囊、git 分支
   const wanted: Pill[] = [{ text: o.label, tone: 'ink' }, ...o.pills]
   let xEnd = -16
@@ -319,7 +319,7 @@ ${pills}
 ${value(52, o.ctx)}
 ${value(76, o.quota)}
 <text x="-16" y="60" text-anchor="end" font-size="11" fill="${c.pencil}">${esc(o.words.cost)}</text>
-<text x="-16" y="84" text-anchor="end" font-size="15" font-weight="700" fill="${o.usd === null ? c.pencil : c.onAccent}">${o.usd === null ? '—' : '$' + o.usd.toFixed(2)}</text>
+<text x="-16" y="84" text-anchor="end" font-size="15" font-weight="700" fill="${o.usd === null ? c.pencil : c.deskFigure}">${o.usd === null ? '—' : '$' + o.usd.toFixed(2)}</text>
 </svg>
 </svg>`
 }
@@ -342,7 +342,7 @@ export function paneSvg(o: PaneData, guess: number, c: Colors, motif: Style['mot
   const tile = (x: string, label: string, v: string, bar: number | null, grad: string) =>
     `<svg x="${x}" y="46" width="33.3%" height="56" overflow="visible">
 <text x="16" y="14" font-size="11" fill="${c.pencil}">${esc(label)}</text>
-<text x="16" y="38" font-size="20" font-weight="700" fill="${c.onAccent}">${esc(v)}</text>
+<text x="16" y="38" font-size="20" font-weight="700" fill="${c.deskFigure}">${esc(v)}</text>
 ${bar === null ? '' : `<rect x="16" y="46" width="64" height="4" rx="2" fill="${c.chip}"/><rect x="16" y="46" width="${Math.max(3, Math.min(64, (bar / 100) * 64)).toFixed(1)}" height="4" rx="2" fill="url(#${grad})"/>`}
 </svg>`
   const vals = o.history.slice(-24)

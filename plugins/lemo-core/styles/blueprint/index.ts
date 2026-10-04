@@ -1,5 +1,5 @@
 // 三角尺（Set Square，名字取自像素小画里的三角板）：在蓝图上工程制图，图纸、尺寸、比例尺、审图、盖章、描图。
-// 制图亮蓝只当底色用，上面写深制图蓝的字（白字在这个亮度上对比不够）；石墨灰做次要色，红铅笔做出错、拦截。
+// 制图亮蓝只当底色用，上面写白字；桌面横条的大数字用深制图蓝；石墨灰做次要色，红铅笔做出错、拦截。
 // 风格 = 一包数据：颜色、点缀、像素小画、音效、语音，和各 mod 带风格味道的文字（words/ 下每个 mod 一个文件）。
 // 世界观：每条消息是一张图纸，Claude 的回复是这张图，工具在跑 = 绘制中，调 skill = 取用模板，一轮完成 = 出图。
 import type { LemoStyle, LemoText } from '../../types'
@@ -39,7 +39,7 @@ export const blueprint: LemoStyle = {
     grid: '#8AA2E0', // 图纸方格
     pencil: '#858D99', // 石墨灰
     accent: '#5580FF', // 制图亮蓝（饱和、偏宝蓝，和岩彩那种沉稳的石青蓝拉开），只做底色
-    onAccent: '#0A1B38', // 深制图蓝
+    onAccent: '#FFFFFF', // 强调色偏深，上面写白字（标签、竹签）
     red: '#E04848', // 审图红铅笔
     inkDark: '#102A66',
     chip: '#E8EEFD',
@@ -49,6 +49,7 @@ export const blueprint: LemoStyle = {
     cardFillDark: '#0F2347', // 晒图纸的深蓝
     deskCardFill: '#F6F8FF',
     deskCardBorder: '#DCE4FA',
+    deskFigure: '#0A1B38', // 深制图蓝：桌面卡片上的大字（横条、面板的数值和风格名）
   },
   // 对位十字、尺寸线、交叉记号
   bubbles: ['+', '|-|', '·', '+ ·', '×'],

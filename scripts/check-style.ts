@@ -65,6 +65,23 @@ const contrast = (a: string, b: string) => {
   const [x, y] = [lum(a), lum(b)]
   return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
 }
+// 色块上的字看不看得清，按 APCA（0.0.98G）算，取绝对值：60 以上读着轻松，45 以下吃力。
+// 上面的对比度会高估黑字写在中等深浅的颜色上（品红底黑字算出 4.7，实际读着吃力），所以标签字用这个
+function apca(text: string, bg: string): number {
+  const y = (hex: string) => {
+    const n = parseInt(hex.slice(1), 16)
+    const f = (v: number) => Math.pow(v / 255, 2.4)
+    const v = 0.2126729 * f((n >> 16) & 255) + 0.7151522 * f((n >> 8) & 255) + 0.072175 * f(n & 255)
+    return v > 0.022 ? v : v + Math.pow(0.022 - v, 1.414)
+  }
+  const [t, b] = [y(text), y(bg)]
+  if (b > t) {
+    const s = (Math.pow(b, 0.56) - Math.pow(t, 0.57)) * 1.14
+    return s < 0.1 ? 0 : (s - 0.027) * 100
+  }
+  const s = (Math.pow(b, 0.65) - Math.pow(t, 0.62)) * 1.14
+  return s > -0.1 ? 0 : -(s + 0.027) * 100
+}
 
 // ---------- 基本信息 ----------
 if (!/^[a-z][a-z0-9-]*$/.test(id)) bad(`id 只能用小写字母、数字和 -：${id}`)
@@ -95,14 +112,20 @@ if (errors.length === 0) {
     for (const l of LIGHT) need(`${k} 在浅色底 ${l} 上`, c[k]!, l, 1.5, false)
   }
   // 强调色只做底色：上面的字、竖条在两种底上的可见度
-  need('onAccent 写在 accent 上（头部标签、胶囊）', c.onAccent!, c.accent!, 4.5, true)
+  // 强调色底上的字（标签、竹签）：要看得清，而且白字和深色字里挑清楚的那个
+  const tag = apca(c.onAccent!, c.accent!)
+  if (tag < 50) bad(`onAccent 写在 accent 上（标签、竹签）可读性 ${tag.toFixed(0)}，要 ≥ 50`)
+  for (const [alt, name] of [['#FFFFFF', '白字'], [c.deskFigure!, `深色字 ${c.deskFigure}`]] as const) {
+    const other = apca(alt, c.accent!)
+    if (other - tag > 8) bad(`onAccent 写在 accent 上可读性 ${tag.toFixed(0)}，换成${name}是 ${other.toFixed(0)}，用${name}`)
+  }
   need('accent 竖条在深色终端上', c.accent!, DARK, 2.5, true)
   need('accent 竖条在浅色面板 #EBEBEB 上', c.accent!, '#EBEBEB', 1.2, false)
   need('bubbleAccent 竖条（深色主题）在深色终端上', c.bubbleAccent!, DARK, 2.5, true)
   // 桌面：深色字写在浅色卡片、小标签上
   need('inkDark 写在 deskCardFill 上', c.inkDark!, c.deskCardFill!, 4.5, true)
   need('inkDark 写在 chip 上', c.inkDark!, c.chip!, 4.5, true)
-  need('onAccent 写在 deskCardFill 上（桌面横条的数值）', c.onAccent!, c.deskCardFill!, 4.5, true)
+  need('deskFigure 写在 deskCardFill 上（桌面横条的数值）', c.deskFigure!, c.deskCardFill!, 4.5, true)
   need('pencil 写在 deskCardFill 上', c.pencil!, c.deskCardFill!, 2.4, true)
   if (contrast(c.deskCardFill!, '#FFFFFF') > 1.25) warn('deskCardFill 要很浅（桌面卡片底色），现在偏深')
   if (contrast(c.cardFillLight!, '#FFFFFF') > 1.3) warn('cardFillLight 要很浅（桌面上命令回复的卡片底）')

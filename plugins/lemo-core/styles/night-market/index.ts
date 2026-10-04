@@ -37,9 +37,9 @@ export const nightMarket: LemoStyle = {
     ink: '#E07434', // 灯笼的光
     grid: '#A3849F', // 暮色
     pencil: '#978A95', // 夜里的灰
-    // 梅子紫，只做底色。上面的字用深色：onAccent 还是桌面横条大数字的颜色（画在很浅的卡片底上），白字在那里看不见
+    // 梅子紫，只做底色。上面写白字
     accent: '#B062A3',
-    onAccent: '#14070F',
+    onAccent: '#FFFFFF', // 强调色偏深，上面写白字（标签、竹签）
     red: '#E23E57', // 偏玫红的红，和灯笼橙拉开
     inkDark: '#55204C', // 深梅子
     chip: '#F4E6F0',
@@ -49,6 +49,7 @@ export const nightMarket: LemoStyle = {
     cardFillDark: '#2A1F2E',
     deskCardFill: '#FCF8FB',
     deskCardBorder: '#EEDDEA',
+    deskFigure: '#14070F', // 桌面卡片上的大字（横条、面板的数值和风格名）
   },
   bubbles: ['⋆', '✦ ·', '∘', '· ✧', '✦'],
   sprite: { palette: { r: '#E8503A', d: '#B8352B', o: '#FFC46B', y: '#E8B84A', p: '#B062A3' }, frames: LANTERN },

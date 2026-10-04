@@ -20,6 +20,7 @@ export const plain: LemoStyle = {
     cardFillDark: '#24272B',
     deskCardFill: '#FAFBFC',
     deskCardBorder: '#E3E7EC',
+    deskFigure: '#1B1D1F', // 桌面卡片上的大字（横条、面板的数值和风格名）
   },
   bubbles: [],
   sprite: null,

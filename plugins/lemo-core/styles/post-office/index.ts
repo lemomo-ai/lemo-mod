@@ -1,4 +1,4 @@
-// 邮筒（Postbox）：老邮局的柜台、邮票、邮戳、挂号和投递。深邮政绿只当底色用，上面写深色字（桌面横条的大数字也用这个深色）；
+// 邮筒（Postbox）：老邮局的柜台、邮票、邮戳、挂号和投递。深邮政绿只当底色用，上面写白字；
 // 邮票黄是强调色的气泡。不出现任何真实邮政机构的名字或标志。
 // 风格 = 一包数据：颜色、点缀、像素小画、音效、语音，和各 mod 带风格味道的文字（words/ 下每个 mod 一个文件）。
 import type { LemoStyle, LemoText } from '../../types'
@@ -38,7 +38,7 @@ export const postOffice: LemoStyle = {
     grid: '#A8946F', // 牛皮纸包裹的麻绳色
     pencil: '#8F8A80', // 旧柜台上的铅笔灰
     accent: '#1D924F', // 深邮政绿，只做底色
-    onAccent: '#0B130E', // 绿底上的深色字（也是桌面横条的大数字，所以不能用白字）
+    onAccent: '#FFFFFF', // 强调色偏深，上面写白字（标签、竹签）
     red: '#D94A3D', // 邮戳红
     inkDark: '#1D4A34', // 墨绿
     chip: '#E7F2EA', // 浅绿底
@@ -48,6 +48,7 @@ export const postOffice: LemoStyle = {
     cardFillDark: '#1E2923', // 夜里的邮筒绿
     deskCardFill: '#F8FAF6',
     deskCardBorder: '#E1EADF',
+    deskFigure: '#0B130E', // 近黑：桌面卡片上的大字（横条、面板的数值和风格名）
   },
   // 邮戳上的波浪线和航空信封的叉
   bubbles: ['≈', '~≈~', '×', '≈ ~', '~'],

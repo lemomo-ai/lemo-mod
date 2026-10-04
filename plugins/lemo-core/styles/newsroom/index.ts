@@ -48,6 +48,7 @@ export const newsroom: LemoStyle = {
     cardFillDark: '#23252B',
     deskCardFill: '#FAF8F3',
     deskCardBorder: '#E8E3D6',
+    deskFigure: '#1E2F52', // 油墨深蓝：桌面卡片上的大字（横条、面板的数值和风格名）
   },
   // 段落号、分节号和排版里的星号分隔
   bubbles: ['¶', '§', '***', '· ¶', '§ ·'],

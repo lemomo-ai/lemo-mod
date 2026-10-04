@@ -47,6 +47,7 @@ export const greenhouse: LemoStyle = {
     cardFillDark: '#20271D',
     deskCardFill: '#F7FAF3',
     deskCardBorder: '#E1ECD7',
+    deskFigure: '#1A2614', // 深土色：桌面卡片上的大字（横条、面板的数值和风格名）
   },
   // ψ 是一棵小苗，❀ 是开的花，· , 是喷雾落下的水珠
   bubbles: ['ψ', '· ,', '❀', ', ·', '·'],

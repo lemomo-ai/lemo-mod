@@ -47,6 +47,7 @@ export const dessert: LemoStyle = {
     cardFillDark: '#2E2329',
     deskCardFill: '#FFFAFC',
     deskCardBorder: '#F6DDE7',
+    deskFigure: '#3B1426', // 桌面卡片上的大字（横条、面板的数值和风格名）
   },
   bubbles: ['✧', '∘ ∘', '·', '✦ ·', '∘'],
   sprite: { palette: { p: '#F08CB0', q: '#CF5D8D', m: '#F5B53F', w: '#FFFFFF', s: '#9FB3C9' }, frames: BOWL },

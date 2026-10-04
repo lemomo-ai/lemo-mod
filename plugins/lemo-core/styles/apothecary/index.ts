@@ -1,6 +1,6 @@
 // 葫芦（Gourd）：老中药铺——百子柜、戥子、药碾、方子，抓药、煎药。
 // 一切说成抓药：回复是一张方子，工具在跑是抓药，调 skill 是拉开一格药斗，完成是方子抓齐，提问是问诊。
-// 玉绿只当底色用，上面写红木棕的深色字（桌面横条的大数字也用 onAccent）；底色是宣纸色。
+// 玉绿只当底色用，上面写白字；桌面横条的大数字用红木棕；底色是宣纸色。
 // 风格 = 一包数据：颜色、点缀、像素小画、音效、语音，和各 mod 带风格味道的文字（words/ 下每个 mod 一个文件）。
 import type { LemoStyle, LemoText } from '../../types'
 
@@ -72,7 +72,7 @@ export const apothecary: LemoStyle = {
     grid: '#9C8A68', // 竹篾：线条、刻度
     pencil: '#8F8A80', // 药渣灰
     accent: '#5FB58F', // 玉绿，只做底色
-    onAccent: '#2B1710', // 红木
+    onAccent: '#FFFFFF', // 强调色偏深，上面写白字（标签、竹签）
     red: '#D64B3C', // 朱砂药签
     inkDark: '#4A2A1C', // 红木棕，桌面上的深色字
     chip: '#E8F4EC', // 淡玉
@@ -82,6 +82,7 @@ export const apothecary: LemoStyle = {
     cardFillDark: '#22201B',
     deskCardFill: '#FBF9F3',
     deskCardBorder: '#E9E2D2',
+    deskFigure: '#2B1710', // 红木：桌面卡片上的大字（横条、面板的数值和风格名）
   },
   // 药罐上冒的热气
   bubbles: ['˚', '° ˚', '~', '˚ °', '≈'],

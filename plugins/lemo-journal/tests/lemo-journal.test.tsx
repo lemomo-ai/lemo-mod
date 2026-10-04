@@ -511,7 +511,7 @@ const LAB = {
   colors: {
     ink: '#6F8FE0', grid: '#7FA3CC', pencil: '#8A9099', accent: '#F2CF1D', onAccent: '#1B1D1F', red: '#E0524A',
     inkDark: '#2F4F96', chip: '#E9EFFA', bubble: '#8FB3D9', bubbleAccent: '#E2B714',
-    cardFillLight: '#FFFBEA', cardFillDark: '#262A31', deskCardFill: '#F7F9FC', deskCardBorder: '#E4ECF6',
+    cardFillLight: '#FFFBEA', cardFillDark: '#262A31', deskCardFill: '#F7F9FC', deskCardBorder: '#E4ECF6', deskFigure: '#1B1D1F',
   },
   bubbles: [],
   sprite: null,

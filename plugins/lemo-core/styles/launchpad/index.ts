@@ -49,6 +49,7 @@ export const launchpad: LemoStyle = {
     cardFillDark: '#11141B',
     deskCardFill: '#F8F9FB',
     deskCardBorder: '#E1E6ED',
+    deskFigure: '#0F131B', // 近太空黑：桌面卡片上的大字（横条、面板的数值和风格名）
   },
   // 倒计时 3、2、1，然后升空
   bubbles: ['·', '3', '· 2', '1', '^'],

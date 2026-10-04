@@ -37,7 +37,7 @@ export const bakery: LemoStyle = {
     grid: '#B39B78', // 面粉袋的麻色
     pencil: '#968B80', // 撒了面粉的灰
     accent: '#D4914A', // 焦糖面包皮，只做底色
-    onAccent: '#2B1708',
+    onAccent: '#FFFFFF', // 强调色偏深，上面写白字（标签、竹签）
     red: '#DB4152', // 覆盆子果酱
     inkDark: '#5B3416', // 深烘的可可色
     chip: '#F5EBDD', // 面粉白
@@ -47,6 +47,7 @@ export const bakery: LemoStyle = {
     cardFillDark: '#2E2620',
     deskCardFill: '#FFFBF4',
     deskCardBorder: '#F2E5CF',
+    deskFigure: '#2B1708', // 桌面卡片上的大字（横条、面板的数值和风格名）
   },
   bubbles: ['~', '˚ ~', '≈', '~ ˚', '·'],
   sprite: { palette: { d: '#8A4E22', c: '#C98242', h: '#E5A552', w: '#FBE6B8', s: '#B8AFA3' }, frames: LOAF },

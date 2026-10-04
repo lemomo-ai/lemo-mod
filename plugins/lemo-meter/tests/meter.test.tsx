@@ -110,7 +110,7 @@ const PLAIN = {
   colors: {
     ink: '#5B6B7F', grid: '#9AA5B1', pencil: '#8A9099', accent: '#D9DEE5', onAccent: '#1B1D1F', red: '#D64545',
     inkDark: '#33404F', chip: '#EEF1F4', bubble: '#B8C1CC', bubbleAccent: '#9AA5B1',
-    cardFillLight: '#FFFFFF', cardFillDark: '#24272B', deskCardFill: '#FAFBFC', deskCardBorder: '#E3E7EC',
+    cardFillLight: '#FFFFFF', cardFillDark: '#24272B', deskCardFill: '#FAFBFC', deskCardBorder: '#E3E7EC', deskFigure: '#1B1D1F',
   },
   bubbles: [],
   sprite: null,
@@ -251,6 +251,22 @@ test('横条：风格没有像素小画时终端不画，motif 为 none 时桌�
   const svg = String((await desktop.find({ type: 'Svg' }))?.props.source)
   expect(svg).not.toContain('lm-glass')
   expect(svg).toContain('#D9DEE5')
+  await desktop.unmount()
+})
+
+test('横条：强调色偏深、标签配白字的风格，桌面卡片上的风格名和数值还是 deskFigure 的深色字', { plugins: [testCore] }, async ($, on) => {
+  mock.clock(on)
+  engine(on)
+  on('session.usage', async () => ({ value: { startedAt: 0, context: { tokens: 1200, window: 10000, percent: 12 }, rateLimits: [], cost: { usd: 0.42 } } }))
+  const colors = { ...PLAIN.colors, accent: '#E4418F', onAccent: '#FFFFFF', deskFigure: '#141518' }
+  on('state.get', { plugin: 'lemo-core', key: 'style' }, async () => ({ value: { value: { ...PLAIN, colors }, version: 1 } }))
+  await $.session.start({ cwd: '/tmp', surface: 'desktop', isInteractive: true })
+  const desktop = await mountChecked($, { ...BAND, surface: 'desktop' })
+  const svg = String((await desktop.find({ type: 'Svg' }))?.props.source)
+  expect(svg).toMatch(/fill="#141518"[^>]*>lemo-mod</)
+  expect(svg).toMatch(/fill="#141518"[^>]*>12%</)
+  expect(svg).toMatch(/fill="#141518"[^>]*>\$0\.42</)
+  expect(svg).not.toContain('fill="#FFFFFF"')
   await desktop.unmount()
 })
 

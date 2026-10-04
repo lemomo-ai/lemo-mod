@@ -1,5 +1,5 @@
-// 灯塔（Lighthouse）：海边灯塔的守灯人、航向、雾笛、浮标和靠岸。海水蓝绿只当底色用，上面写海军蓝的深色字
-// （按对比度选的：桌面横条的大数字也用 onAccent，白字在浅色卡片上看不见）。像素小画是红白条纹的灯塔，灯在转。
+// 灯塔（Lighthouse）：海边灯塔的守灯人、航向、雾笛、浮标和靠岸。海水蓝绿只当底色用，上面写白字。
+// 像素小画是红白条纹的灯塔，灯在转。
 // 风格 = 一包数据：颜色、点缀、像素小画、音效、语音，和各 mod 带风格味道的文字（words/ 下每个 mod 一个文件）。
 import type { LemoStyle, LemoText } from '../../types'
 
@@ -39,7 +39,7 @@ export const lighthouse: LemoStyle = {
     grid: '#6FA5A8', // 海图上的等深线
     pencil: '#8A97A0', // 雾灰
     accent: '#1FA0A3', // 海水蓝绿，只做底色
-    onAccent: '#10233F', // 蓝绿底上的海军蓝字（也是桌面横条的大数字）
+    onAccent: '#FFFFFF', // 强调色偏深，上面写白字（标签、竹签）
     red: '#E04F45', // 灯塔红
     inkDark: '#173A5E', // 海军蓝
     chip: '#E6F0F5', // 浅海雾
@@ -49,6 +49,7 @@ export const lighthouse: LemoStyle = {
     cardFillDark: '#1A2A33', // 夜里的海
     deskCardFill: '#F6F9FB',
     deskCardBorder: '#DFE8EE',
+    deskFigure: '#10233F', // 海军蓝：桌面卡片上的大字（横条、面板的数值和风格名）
   },
   // 灯光和海浪
   bubbles: ['✦', '~ ≈', '·', '≈ ~', '✧'],

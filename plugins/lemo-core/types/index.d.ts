@@ -82,7 +82,7 @@ export type LemoStyle = {
     pencil: string
     /** 强调色：只做底色（浅色终端上黄字看不清）。终端面板卡片左边的竖条也是它 */
     accent: string
-    /** 强调色底上的字 */
+    /** 强调色底上的字（标签、竹签）：强调色偏深的配白字，偏浅的配深色字 */
     onAccent: string
     /** 出错、拦截 */
     red: string
@@ -100,6 +100,8 @@ export type LemoStyle = {
     /** 桌面卡片底色和边框 */
     deskCardFill: string
     deskCardBorder: string
+    /** 桌面卡片上的大字：横条、面板的数值和风格名；把颜色调深也往它那边调 */
+    deskFigure: string
   }
   /** 面板头部的小点缀（气泡）；空数组表示不加。卡片标题后面不加 */
   bubbles: readonly string[]

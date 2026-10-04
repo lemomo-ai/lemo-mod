@@ -49,6 +49,7 @@ export const polar: LemoStyle = {
     cardFillDark: '#0F222A', // 极夜
     deskCardFill: '#F7FBFC',
     deskCardBorder: '#DCECF1',
+    deskFigure: '#0B2A33', // 深海军蓝：桌面卡片上的大字（横条、面板的数值和风格名）
   },
   // 飘着的雪花
   bubbles: ['*', '· *', '+', '* ·', '×'],

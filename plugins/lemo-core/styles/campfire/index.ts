@@ -36,8 +36,8 @@ export const campfire: LemoStyle = {
     ink: '#3F9065', // 松针绿
     grid: '#A08C78', // 木柴的灰褐
     pencil: '#938A82', // 柴灰
-    accent: '#D66B1F', // 炭火橙红，只做底色。压深一点像烧透的炭，和亮橙、朱红拉开；白字对比不够，配深色字
-    onAccent: '#1F1712', // 炭黑
+    accent: '#D66B1F', // 炭火橙红，只做底色。压深一点像烧透的炭，和亮橙、朱红拉开；上面写白字
+    onAccent: '#FFFFFF', // 强调色偏深，上面写白字（标签、竹签）
     red: '#D9414F', // 野莓红，和炭火的橙红分开
     inkDark: '#24452F', // 深松林
     chip: '#F4ECE2', // 帐篷帆布
@@ -47,6 +47,7 @@ export const campfire: LemoStyle = {
     cardFillDark: '#26201C',
     deskCardFill: '#FBF8F4',
     deskCardBorder: '#EEE4D8',
+    deskFigure: '#1F1712', // 炭黑：桌面卡片上的大字（横条、面板的数值和风格名）
   },
   // 火堆上方往上飘的火星
   bubbles: ['*', '˙ ·', '⋆', '· ˙', '˙'],
