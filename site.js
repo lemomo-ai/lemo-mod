@@ -1,5 +1,6 @@
-// lemo-mod 风格：左边选风格，右边两个窗口（终端实拍、桌面 App 仿真）。每个风格的数据在 data/<id>.json，用到时才取。
-// 选中的风格记在地址 #<id>（styles.html#lemon-lab）；明暗、语言跟顶栏走（base.js），分页只在页面里。
+// lemo-mod 风格：左边选风格，右边一次看一个窗口（桌面 App 仿真 | 终端 CLI 实拍，默认桌面）。每个风格的数据在 data/<id>.json，用到时才取。
+// 选中的风格记在地址 #<id>（styles.html#lemon-lab）；看哪个窗口记在 localStorage（lemo-mod.view，换风格时不变）；
+// 明暗、语言跟顶栏走（base.js），分页只在页面里。
 (function () {
   const LIST = window.STYLES || []
   const $ = id => document.getElementById(id)
@@ -7,15 +8,20 @@
   const still = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches } catch (_) { return false } })()
 
   const T = {
-    zh: { title: '风格', count: n => `${n} 套 · 终端和桌面 App`, term: '终端', desk: '桌面 App', mark: '标出 mod 画的', pickLabel: '选风格',
+    zh: { title: '风格', count: n => `${n} 套 · 终端和桌面 App`, cli: '终端 CLI', desk: '桌面 App', views: '窗口', mark: '标出 mod 画的', pickLabel: '选风格',
       light: '明', dark: '暗', tabs: { main: '常用', behave: '行为', bg: '后台', safe: '安全' }, loading: '载入中…', failed: '没载入，刷新试试', missing: '这一页没有截图' },
-    en: { title: 'Styles', count: n => `${n} styles · terminal and desktop app`, term: 'Terminal', desk: 'Desktop app', mark: 'Show mod parts', pickLabel: 'Pick a style',
+    en: { title: 'Styles', count: n => `${n} styles · terminal and desktop app`, cli: 'Terminal (CLI)', desk: 'Desktop app', views: 'Window', mark: 'Show mod parts', pickLabel: 'Pick a style',
       light: 'Light', dark: 'Dark', tabs: { main: 'Main', behave: 'Behavior', bg: 'Background', safe: 'Safety' }, loading: 'Loading…', failed: 'Did not load. Refresh to try again', missing: 'No shot for this page' },
   }
   const TABS = ['main', 'behave', 'bg', 'safe']
   const root = document.documentElement
   const sysDark = () => root.dataset.theme === 'dark' || (!root.dataset.theme && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches)
-  const v = { id: null, lang: root.lang === 'en' ? 'en' : 'zh', mode: sysDark() ? 'dark' : 'light', tab: 'main', data: null }
+  // 看哪个窗口：'desk'（默认）| 'term'。<head> 里已经先读过一次（root.dataset.view），免得先闪一下桌面
+  const VIEWS = ['desk', 'term']
+  const VIEW_KEY = 'lemo-mod.view'
+  const savedView = () => { try { return localStorage.getItem(VIEW_KEY) } catch (_) { return null } }
+  const v = { id: null, lang: root.lang === 'en' ? 'en' : 'zh', mode: sysDark() ? 'dark' : 'light', tab: 'main', data: null,
+    view: VIEWS.includes(root.dataset.view) ? root.dataset.view : (VIEWS.includes(savedView()) ? savedView() : 'desk') }
   const cache = {}
 
   // 像素小画：16×10，几帧轮流（每帧 0.5 秒，和桌面横条一样）；anim=false 只画第一帧
@@ -61,7 +67,37 @@
       a.querySelector('.nm small').textContent = v.lang === 'zh' ? s.name.en : s.name.zh
     })
     seg($('term-tabs'), TABS.map(k => [k, t.tabs[k]]), v.tab, k => setTab(k))
+    $('view-tabs').setAttribute('aria-label', t.views)
   }
+
+  // ---------- 桌面 App | 终端 CLI：同一个位置一次放一个 ----------
+  const viewTabs = () => [...document.querySelectorAll('#view-tabs [role="tab"]')]
+  function setView(k, focus) {
+    if (!VIEWS.includes(k)) k = 'desk'
+    v.view = k
+    root.dataset.view = k
+    try { localStorage.setItem(VIEW_KEY, k) } catch (_) { /* 无痕窗口等：只在本页生效 */ }
+    viewTabs().forEach(b => {
+      const on = b.dataset.view === k
+      b.setAttribute('aria-selected', String(on))
+      b.tabIndex = on ? 0 : -1
+      if (on && focus) b.focus()
+    })
+    fit()
+    if (k === 'desk') { const sc = $('desk-scroll'); sc.scrollTop = sc.scrollHeight }
+  }
+  $('view-tabs').addEventListener('click', e => {
+    const b = e.target.closest('[role="tab"]')
+    if (b && b.dataset.view !== v.view) setView(b.dataset.view)
+  })
+  // 键盘：← → 换（Home / End 到头），换了就显示；Tab 进到窗口里
+  $('view-tabs').addEventListener('keydown', e => {
+    const i = VIEWS.indexOf(v.view)
+    const to = { ArrowLeft: i - 1, ArrowRight: i + 1, ArrowUp: i - 1, ArrowDown: i + 1, Home: 0, End: VIEWS.length - 1 }[e.key]
+    if (to === undefined) return
+    e.preventDefault()
+    setView(VIEWS[(to + VIEWS.length) % VIEWS.length], true)
+  })
   function setTab(k) {
     v.tab = k
     press($('term-tabs'), k)
@@ -96,16 +132,20 @@
     } catch (_) { b.classList.remove('on') }
   })
 
-  // ---------- 两个窗口：一样宽。终端按宽度定字号让整屏铺满；桌面按真 App 一比一（1492×952）画再缩放 ----------
+  // ---------- 两个窗口：一样大，放在同一个位置（.views，高度这里定），换的时候页面不跳。
+  // 终端按宽度定字号让整屏铺满；桌面按真 App 一比一（1492×952）画再缩放 ----------
   const DESK_W = 1492, DESK_H = 952
   let cols = 0
   function fit() {
     const W = $('stage').clientWidth
-    const z = Math.min(1, Math.max(0.24, W / DESK_W))
+    // 缩放比往下取到万分之一：缩完不会比舞台宽出零点几像素（不然桌面那边会冒出横向滚动条，比终端高一截）
+    const z = Math.min(1, Math.max(0.24, Math.floor(W / DESK_W * 1e4) / 1e4))
     $('desk-win').style.zoom = String(z)
-    // 终端窗口和桌面窗口一样高（桌面按 1492×952 缩放）。终端整屏放进窗口、不出滚动条：
+    // 终端窗口和桌面窗口一样高（桌面按 1492×952 缩放）：两个都填满 .views。终端整屏放进窗口、不出滚动条：
     // 先按宽度定字号，再量一下，高了或宽了就按比例缩小（10-03 用户：两边一样高，右边不要滚动条）
-    $('term-win').style.height = `${Math.round(DESK_H * z)}px`
+    $('views').style.height = `${Math.ceil(DESK_H * z)}px`
+    // 终端藏着的时候量不了，换到终端时再算（setView 会调 fit）
+    if (v.view !== 'term') return
     const pre = $('term-shot').querySelector('pre')
     if (!pre || !cols) return
     const box = $('term-shot')
@@ -226,11 +266,18 @@
   const fromHash = () => decodeURIComponent((location.hash || '').slice(1))
   window.addEventListener('hashchange', () => select(fromHash()))
   window.addEventListener('resize', fit)
+  // 终端的等宽字体：页面打开时终端多半藏着，浏览器不会去下载它；先要来，字体到了（或换到终端后才到）再按真字体量一遍
+  try {
+    document.fonts.load('400 12px "JetBrains Mono"').then(fit, () => {})
+    document.fonts.load('700 12px "JetBrains Mono"').then(fit, () => {})
+    document.fonts.addEventListener('loadingdone', fit)
+  } catch (_) { /* 没有 document.fonts 就用系统等宽字，照样量 */ }
   // 顶栏换语言、换明暗：页面和两个窗口一起换
   document.addEventListener('lemo:lang', e => { v.lang = e.detail; chrome(); draw() })
   document.addEventListener('lemo:theme', e => { v.mode = e.detail; draw() })
   try { new ResizeObserver(fit).observe($('stage')) } catch (_) { /* 没有就靠 resize */ }
 
   chrome()
+  setView(v.view)
   select(fromHash())
 })()

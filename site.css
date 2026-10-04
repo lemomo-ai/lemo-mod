@@ -1,4 +1,4 @@
-/* lemo-mod 风格。版式：左边一列风格（像素小画 + 名字，像一排卡带），右边两个真窗口一上一下。
+/* lemo-mod 风格。版式：左边一列风格（像素小画 + 名字，像一排卡带），右边风格抬头下面一次放一个真窗口（桌面 App | 终端 CLI 切换）。
    中性色偏一点柠檬绿；站点自己只用一个品牌黄做小点缀，颜色都让给各个风格 */
 /* 颜色、字体、顶栏在 base.css（两页共用） */
 body.gallery { --page-max: 1640px; }
@@ -46,14 +46,23 @@ body.gallery .topbar { position: static; }
 .seg button:hover { color: var(--fg); }
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px var(--line); }
 
-/* ---------- 两个窗口 ---------- */
-.shot { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.cap-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-.cap { font-family: var(--display); font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
-.tog { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); cursor: pointer; }
+/* ---------- 窗口：一次一个（桌面 App | 终端 CLI），同一个位置、一样大；切换按钮在头部、和试听按钮同一行靠右，「标出 mod 画的」在它左边 ---------- */
+.shot { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.viewbar { display: flex; align-items: center; justify-content: flex-end; gap: 10px 16px; flex-wrap: wrap; min-width: 0; }
+.head .viewbar { margin-left: auto; }
+.seg-view button { padding: 5px 14px; font-size: 14px; }
+.seg button[aria-selected="true"] { background: var(--surface); color: var(--fg); font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px var(--line); }
+.tog { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); cursor: pointer; order: -1; }
 .tog input { accent-color: var(--fg); width: 14px; height: 14px; margin: 0; }
+/* 只显示选中的那个；「标出 mod 画的」只管桌面，终端时藏起来但占着位置（窄屏换行时也不跳） */
+:root:not([data-view="term"]) #panel-term, :root[data-view="term"] #panel-desk { display: none; }
+:root[data-view="term"] #mark-tog { visibility: hidden; }
+/* 高度 site.js 按桌面窗口（1492×952 缩放后）定，两个窗口都填满它 */
+.views { min-width: 0; }
+.view { height: 100%; min-width: 0; }
+.view:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; border-radius: 12px; }
 .empty { padding: 40px 16px; text-align: center; color: #8B9098; font-family: var(--sans); font-size: 14px; }
-.desk-wrap { overflow-x: auto; }
+.desk-wrap { height: 100%; overflow-x: auto; overflow-y: hidden; }
 /* 窗口标题栏里的面板分页 */
 .win-bar .seg-sm { margin-left: auto; position: relative; z-index: 1; padding: 2px; background: rgba(0,0,0,.25); border-radius: 7px; }
 .win-bar .seg-sm button { padding: 1px 10px; font-size: 12px; color: #A9ADB5; border-radius: 5px; }
@@ -84,6 +93,7 @@ body.gallery .topbar { position: static; }
 }
 
 .win { margin: 0; border-radius: 11px; overflow: hidden; border: 1px solid rgba(0,0,0,.18); box-sizing: border-box; display: flex; flex-direction: column; }
+.win-term { height: 100%; }
 .win-bar { height: 30px; flex-shrink: 0; display: flex; align-items: center; position: relative; padding: 0 12px; font-size: 12.5px; }
 .win-bar .dots { display: flex; gap: 7px; }
 .win-bar .dots i { width: 12px; height: 12px; border-radius: 50%; display: block; background: #FF5F57; }
@@ -188,3 +198,8 @@ body.gallery .topbar { position: static; }
 .mark .mod-part { outline: 2px dashed #D9466F; outline-offset: 3px; position: relative; border-radius: 2px; }
 .mark .mod-part::after { content: attr(data-mod); position: absolute; top: -10px; right: 6px; font: 600 11px/1.5 var(--sans); background: #D9466F; color: #fff; padding: 0 6px; border-radius: 3px; white-space: nowrap; z-index: 2; }
 .mark span.mod-part::after { top: -16px; right: auto; left: 0; }
+
+/* ---------- 和首页一样：方格纸底、藏青加柠檬黄的点缀（选中的风格像首页的藏青按钮，窗口外框像首页的大图） ---------- */
+body.gallery { background-color: var(--bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; background-position: -1px -1px; }
+.item[aria-current] { background: var(--navy); color: var(--on-navy); border-color: var(--navy); box-shadow: 3px 3px 0 var(--lemon); }
+.views { border-radius: 12px; box-shadow: 0 0 0 2px var(--navy), 8px 8px 0 2px var(--lemon); }
