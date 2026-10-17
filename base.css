@@ -52,6 +52,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .btn-gh { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 13px; border-radius: 9px; background: var(--gh); color: var(--gh-fg); text-decoration: none; font-weight: 600; font-size: 14px; flex-shrink: 0; white-space: nowrap; }
 .btn-gh svg { width: 17px; height: 17px; fill: currentColor; display: block; }
 .btn-gh .gh-star { font-weight: 500; font-size: 12.5px; padding-left: 9px; margin-left: 1px; border-left: 1px solid color-mix(in srgb, var(--gh-fg) 30%, transparent); }
+.btn-gh .gh-n { font-weight: 600; font-variant-numeric: tabular-nums; margin-left: 6px; }
 .btn-gh:hover { filter: brightness(1.15); }
 
 @media (max-width: 760px) {
@@ -61,9 +62,21 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 }
 @media (max-width: 520px) {
   .btn-gh .gh-star { display: none; }
+  /* 星数读到了：窄屏只留「★ 22」，不要「Star」这个词 */
+  .btn-gh:has(.gh-n:not([hidden])) .gh-star { display: inline; }
+  .btn-gh .gh-sw { display: none; }
+  .btn-gh .gh-n { margin-left: 2px; }
+  .btn-gh:has(.gh-n:not([hidden])) .gh-t { display: none; }
 }
 @media (max-width: 420px) {
   .btn-gh { padding: 0 9px; }
   .btn-gh .gh-t { display: none; }
+  .btn-gh:has(.gh-n:not([hidden])) svg { display: none; }  /* 放不下 GitHub 图标和星数，只留「★ 22」 */
+  .btn-gh .gh-star { padding-left: 0; margin-left: 0; border-left: 0; }
   .tb-seg button { min-width: 26px; padding: 0 6px; }
+}
+@media (max-width: 359px) {
+  /* 再窄就放不下星数了，回到只有 GitHub 图标 */
+  .btn-gh:has(.gh-n:not([hidden])) .gh-star { display: none; }
+  .btn-gh:has(.gh-n:not([hidden])) svg { display: block; }
 }

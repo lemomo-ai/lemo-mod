@@ -87,6 +87,19 @@
   scale()
   addEventListener('resize', scale)
 
+  // 顶栏 GitHub 按钮上的星数：一小时内用上次读到的，读不到就不显示数字
+  ;(function stars() {
+    const el = document.querySelector('[data-stars]')
+    if (!el) return
+    const show = n => { el.textContent = n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n); el.hidden = false }
+    try { const c = JSON.parse(sessionStorage.getItem('lemo-mod.stars') || 'null'); if (c && Date.now() - c.t < 36e5) return show(c.n) } catch (_) {}
+    fetch('https://api.github.com/repos/lemomo-ai/lemo-mod').then(r => (r.ok ? r.json() : null)).then(d => {
+      if (!d || typeof d.stargazers_count !== 'number') return
+      show(d.stargazers_count)
+      try { sessionStorage.setItem('lemo-mod.stars', JSON.stringify({ n: d.stargazers_count, t: Date.now() })) } catch (_) {}
+    }).catch(() => {})
+  })()
+
   window.LEMO = { lang, theme, setLang, setTheme }
   reflect()
 })()
